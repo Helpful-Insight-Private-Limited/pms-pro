@@ -34,7 +34,6 @@ backend/uploads/
 # Local agent/tooling state
 .agents/
 .codex/
-.git-push/
 
 # OS/editor noise
 .DS_Store
