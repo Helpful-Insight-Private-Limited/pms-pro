@@ -1,0 +1,1168 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+  DELAYED
+}
+
+enum ProjectMemberRole {
+  PROJECT_MANAGER
+  TEAM_LEADER
+  DEVELOPER
+  REVIEWER
+  QA
+  DESIGNER
+  OBSERVER
+}
+
+enum ProjectLinkType {
+  GIT
+  STAGING
+  PRODUCTION
+  API_DOCS
+  DESIGN
+  DOCUMENTATION
+  OTHER
+}
+
+enum ProjectCredentialType {
+  SERVER
+  STAGING
+  PRODUCTION
+  API
+  DATABASE
+  GIT
+  OTHER
+}
+
+enum MilestoneStatus {
+  PENDING
+  ACTIVE
+  HOLD
+  COMPLETED
+  DELAYED
+}
+
+enum SprintStatus {
+  PLANNING
+  ACTIVE
+  HOLD
+  COMPLETED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  TESTING
+  COMPLETED
+  BLOCKED
+  HOLD
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TaskDependencyType {
+  BLOCKS
+  DEPENDS_ON
+  RELATES_TO
+}
+
+enum NotificationType {
+  SYSTEM
+  PROJECT_ASSIGNED
+  TASK_ASSIGNED
+  TASK_UPDATED
+  TASK_COMMENT
+  TASK_BLOCKED
+  MILESTONE_DUE
+  SPRINT_UPDATED
+  DAILY_REPORT
+  CHAT_MESSAGE
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum ChatThreadType {
+  DIRECT
+  GROUP
+}
+
+enum ChatParticipantRole {
+  OWNER
+  MEMBER
+}
+
+enum ChatMessageType {
+  TEXT
+  SYSTEM
+}
+
+enum EmailDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum BackgroundJobStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+enum CalendarEventType {
+  PROJECT
+  MILESTONE
+  SPRINT
+  TASK
+  LEAVE
+  HOLIDAY
+  MEETING
+  OTHER
+}
+
+enum LeaveType {
+  FULL_DAY
+  HALF_DAY
+  SICK
+  CASUAL
+  VACATION
+  UNPAID
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model User {
+  id              String     @id @default(cuid()) @db.VarChar(191)
+  firstName       String     @db.VarChar(100)
+  lastName        String?    @db.VarChar(100)
+  email           String     @unique @db.VarChar(191)
+  passwordHash    String     @db.VarChar(255)
+  phone           String?    @db.VarChar(30)
+  avatarUrl       String?    @db.VarChar(500)
+  status          UserStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  createdBy       String?    @db.VarChar(191)
+  updatedBy       String?    @db.VarChar(191)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime?
+  isActive        Boolean    @default(true)
+
+  refreshTokens           RefreshToken[]
+  userRoles               UserRole[]               @relation("UserRoleUser")
+  assignedUserRoles       UserRole[]               @relation("UserRoleAssignedBy")
+  developerProfile        DeveloperProfile?
+  developerRates          DeveloperRate[]          @relation("DeveloperRates")
+  managedProjects         Project[]                @relation("ProjectManagerProjects")
+  ledProjects             Project[]                @relation("TeamLeaderProjects")
+  projectMemberships      ProjectMember[]
+  responsibleMilestones   Milestone[]              @relation("ResponsibleMilestones")
+  assignedTasks           Task[]                   @relation("AssignedTasks")
+  reviewTasks             Task[]                   @relation("ReviewTasks")
+  taskComments            TaskComment[]
+  taskBlockers            TaskBlocker[]            @relation("TaskBlockerReporter")
+  taskUpdates             TaskUpdate[]             @relation("TaskUpdateDeveloper")
+  taskTimeLogs            TaskTimeLog[]            @relation("TaskTimeLogDeveloper")
+  taskTimers              TaskTimer[]              @relation("TaskTimerDeveloper")
+  dailyReports            DailyReport[]            @relation("DailyReportDeveloper")
+  developerLeaves         DeveloperLeave[]         @relation("DeveloperLeaves")
+  notifications           UserNotification[]
+  notificationPreferences NotificationPreference[]
+  emailLogs               EmailLog[]
+  activityLogs            ActivityLog[]            @relation("ActivityLogActor")
+  chatThreadsCreated      ChatThread[]             @relation("ChatThreadCreatedBy")
+  chatParticipants        ChatParticipant[]
+  chatMessages            ChatMessage[]            @relation("ChatMessageSender")
+
+  @@index([status])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model ChatThread {
+  id        String         @id @default(cuid()) @db.VarChar(191)
+  type      ChatThreadType @default(DIRECT)
+  name      String?        @db.VarChar(191)
+  createdBy String?        @db.VarChar(191)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean        @default(true)
+
+  creator      User?             @relation("ChatThreadCreatedBy", fields: [createdBy], references: [id])
+  participants ChatParticipant[]
+  messages     ChatMessage[]
+
+  @@index([type])
+  @@index([createdBy])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@index([updatedAt])
+  @@map("chatThreads")
+}
+
+model ChatParticipant {
+  id        String              @id @default(cuid()) @db.VarChar(191)
+  threadId  String              @db.VarChar(191)
+  userId    String              @db.VarChar(191)
+  role      ChatParticipantRole @default(MEMBER)
+  joinedAt  DateTime            @default(now())
+  leftAt    DateTime?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  thread ChatThread @relation(fields: [threadId], references: [id])
+  user   User       @relation(fields: [userId], references: [id])
+
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+  @@index([role])
+  @@index([leftAt])
+  @@map("chatParticipants")
+}
+
+model ChatMessage {
+  id          String          @id @default(cuid()) @db.VarChar(191)
+  threadId    String          @db.VarChar(191)
+  senderId    String          @db.VarChar(191)
+  messageType ChatMessageType @default(TEXT)
+  body        String          @db.Text
+  createdAt   DateTime        @default(now())
+  editedAt    DateTime?
+  deletedAt   DateTime?
+
+  thread ChatThread @relation(fields: [threadId], references: [id])
+  sender User       @relation("ChatMessageSender", fields: [senderId], references: [id])
+
+  @@index([threadId])
+  @@index([senderId])
+  @@index([messageType])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("chatMessages")
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid()) @db.VarChar(191)
+  actorId    String?  @db.VarChar(191)
+  action     String   @db.VarChar(100)
+  module     String   @db.VarChar(100)
+  entityType String?  @db.VarChar(100)
+  entityId   String?  @db.VarChar(191)
+  projectId  String?  @db.VarChar(191)
+  taskId     String?  @db.VarChar(191)
+  ipAddress  String?  @db.VarChar(45)
+  userAgent  String?  @db.VarChar(500)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation("ActivityLogActor", fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([action])
+  @@index([module])
+  @@index([entityType, entityId])
+  @@index([projectId])
+  @@index([taskId])
+  @@index([createdAt])
+  @@map("activityLogs")
+}
+
+model RefreshToken {
+  id                String    @id @default(cuid()) @db.VarChar(191)
+  userId            String    @db.VarChar(191)
+  tokenHash         String    @unique @db.VarChar(255)
+  familyId          String    @db.VarChar(191)
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  replacedByTokenId String?   @db.VarChar(191)
+  ipAddress         String?   @db.VarChar(45)
+  userAgent         String?   @db.VarChar(500)
+  createdAt         DateTime  @default(now())
+
+  user            User           @relation(fields: [userId], references: [id])
+  replacedByToken RefreshToken?  @relation("RefreshTokenRotation", fields: [replacedByTokenId], references: [id])
+  replacedTokens  RefreshToken[] @relation("RefreshTokenRotation")
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("refreshTokens")
+}
+
+model Role {
+  id          String    @id @default(cuid()) @db.VarChar(191)
+  name        String    @db.VarChar(100)
+  slug        String    @unique @db.VarChar(100)
+  description String?   @db.Text
+  isSystem    Boolean   @default(false)
+  createdBy   String?   @db.VarChar(191)
+  updatedBy   String?   @db.VarChar(191)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean   @default(true)
+
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@index([isSystem])
+  @@index([isActive])
+  @@map("roles")
+}
+
+model Permission {
+  id          String    @id @default(cuid()) @db.VarChar(191)
+  module      String    @db.VarChar(100)
+  action      String    @db.VarChar(100)
+  key         String    @unique @db.VarChar(150)
+  description String?   @db.Text
+  isSystem    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean   @default(true)
+
+  rolePermissions RolePermission[]
+
+  @@unique([module, action])
+  @@index([module])
+  @@index([action])
+  @@index([isActive])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String   @id @default(cuid()) @db.VarChar(191)
+  roleId       String   @db.VarChar(191)
+  permissionId String   @db.VarChar(191)
+  createdBy    String?  @db.VarChar(191)
+  createdAt    DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("rolePermissions")
+}
+
+model UserRole {
+  id         String    @id @default(cuid()) @db.VarChar(191)
+  userId     String    @db.VarChar(191)
+  roleId     String    @db.VarChar(191)
+  assignedBy String?   @db.VarChar(191)
+  assignedAt DateTime  @default(now())
+  revokedAt  DateTime?
+  isActive   Boolean   @default(true)
+
+  user     User  @relation("UserRoleUser", fields: [userId], references: [id])
+  role     Role  @relation(fields: [roleId], references: [id])
+  assigner User? @relation("UserRoleAssignedBy", fields: [assignedBy], references: [id])
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([isActive])
+  @@map("userRoles")
+}
+
+model DeveloperProfile {
+  id                   String    @id @default(cuid()) @db.VarChar(191)
+  userId               String    @unique @db.VarChar(191)
+  designation          String?   @db.VarChar(150)
+  experienceYears      Decimal?  @db.Decimal(4, 1)
+  workingHoursPerDay   Decimal   @default(8.00) @db.Decimal(4, 2)
+  availableHoursPerDay Decimal   @default(8.00) @db.Decimal(4, 2)
+  skills               Json?
+  joiningDate          DateTime? @db.Date
+  notes                String?   @db.Text
+  createdBy            String?   @db.VarChar(191)
+  updatedBy            String?   @db.VarChar(191)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean   @default(true)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isActive])
+  @@map("developerProfiles")
+}
+
+model DeveloperRate {
+  id                 String    @id @default(cuid()) @db.VarChar(191)
+  developerId        String    @db.VarChar(191)
+  costPerHour        Decimal   @default(0.00) @db.Decimal(10, 2)
+  billingRatePerHour Decimal   @default(0.00) @db.Decimal(10, 2)
+  currency           String    @default("USD") @db.VarChar(10)
+  effectiveFrom      DateTime  @db.Date
+  effectiveTo        DateTime? @db.Date
+  isCurrent          Boolean   @default(true)
+  createdBy          String?   @db.VarChar(191)
+  updatedBy          String?   @db.VarChar(191)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean   @default(true)
+
+  developer User @relation("DeveloperRates", fields: [developerId], references: [id])
+
+  @@index([developerId])
+  @@index([developerId, effectiveFrom, effectiveTo])
+  @@index([developerId, isCurrent])
+  @@map("developerRates")
+}
+
+model Client {
+  id             String    @id @default(cuid()) @db.VarChar(191)
+  name           String    @db.VarChar(191)
+  code           String?   @unique @db.VarChar(50)
+  contactName    String?   @db.VarChar(150)
+  contactEmail   String?   @db.VarChar(191)
+  contactPhone   String?   @db.VarChar(30)
+  companyWebsite String?   @db.VarChar(500)
+  billingAddress String?   @db.Text
+  notes          String?   @db.Text
+  createdBy      String?   @db.VarChar(191)
+  updatedBy      String?   @db.VarChar(191)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean   @default(true)
+
+  projects Project[]
+
+  @@index([name])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("clients")
+}
+
+model CurrencyMaster {
+  id        String    @id @default(cuid()) @db.VarChar(191)
+  code      String    @unique @db.VarChar(10)
+  name      String    @db.VarChar(100)
+  symbol    String?   @db.VarChar(10)
+  createdBy String?   @db.VarChar(191)
+  updatedBy String?   @db.VarChar(191)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+
+  @@index([name])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("currencyMasters")
+}
+
+model TechnologyStackMaster {
+  id        String    @id @default(cuid()) @db.VarChar(191)
+  name      String    @unique @db.VarChar(100)
+  category  String?   @db.VarChar(100)
+  createdBy String?   @db.VarChar(191)
+  updatedBy String?   @db.VarChar(191)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+
+  @@index([category])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("technologyStackMasters")
+}
+
+model Project {
+  id                  String        @id @default(cuid()) @db.VarChar(191)
+  title               String        @db.VarChar(191)
+  code                String        @unique @db.VarChar(50)
+  clientId            String        @db.VarChar(191)
+  description         String?       @db.Text
+  budget              Decimal       @default(0.00) @db.Decimal(15, 2)
+  currency            String        @default("USD") @db.VarChar(10)
+  progressPercentage  Decimal       @default(0.00) @db.Decimal(5, 2)
+  startDate           DateTime?     @db.Date
+  endDate             DateTime?     @db.Date
+  status              ProjectStatus @default(DRAFT)
+  technologyStack     Json?
+  projectManagerId    String        @db.VarChar(191)
+  teamLeaderId        String?       @db.VarChar(191)
+  gitRepositoryUrl    String?       @db.VarChar(500)
+  stagingUrl          String?       @db.VarChar(500)
+  productionUrl       String?       @db.VarChar(500)
+  apiDocumentationUrl String?       @db.VarChar(500)
+  notes               String?       @db.Text
+  createdBy           String?       @db.VarChar(191)
+  updatedBy           String?       @db.VarChar(191)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  deletedAt           DateTime?
+  isActive            Boolean       @default(true)
+
+  client         Client              @relation(fields: [clientId], references: [id])
+  projectManager User                @relation("ProjectManagerProjects", fields: [projectManagerId], references: [id])
+  teamLeader     User?               @relation("TeamLeaderProjects", fields: [teamLeaderId], references: [id])
+  members        ProjectMember[]
+  attachments    ProjectAttachment[]
+  links          ProjectLink[]
+  credentials    ProjectCredential[]
+  milestones     Milestone[]
+  sprints        Sprint[]
+  tasks          Task[]
+  taskUpdates    TaskUpdate[]
+  taskTimeLogs   TaskTimeLog[]
+  taskTimers     TaskTimer[]
+  dailyReports   DailyReport[]
+
+  @@index([clientId])
+  @@index([projectManagerId])
+  @@index([teamLeaderId])
+  @@index([status])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id                   String            @id @default(cuid()) @db.VarChar(191)
+  projectId            String            @db.VarChar(191)
+  userId               String            @db.VarChar(191)
+  roleInProject        ProjectMemberRole @default(DEVELOPER)
+  allocationPercentage Decimal           @default(100.00) @db.Decimal(5, 2)
+  assignedDate         DateTime          @default(now()) @db.Date
+  releasedDate         DateTime?         @db.Date
+  createdBy            String?           @db.VarChar(191)
+  updatedBy            String?           @db.VarChar(191)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean           @default(true)
+
+  project Project @relation(fields: [projectId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([roleInProject])
+  @@index([isActive])
+  @@index([releasedDate])
+  @@map("projectMembers")
+}
+
+model ProjectAttachment {
+  id           String    @id @default(cuid()) @db.VarChar(191)
+  projectId    String    @db.VarChar(191)
+  fileName     String    @db.VarChar(255)
+  originalName String    @db.VarChar(255)
+  mimeType     String    @db.VarChar(150)
+  fileSize     Int
+  storagePath  String    @db.VarChar(500)
+  publicUrl    String?   @db.VarChar(500)
+  description  String?   @db.Text
+  uploadedBy   String?   @db.VarChar(191)
+  createdBy    String?   @db.VarChar(191)
+  updatedBy    String?   @db.VarChar(191)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  isActive     Boolean   @default(true)
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+  @@index([mimeType])
+  @@index([uploadedBy])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("projectAttachments")
+}
+
+model ProjectLink {
+  id          String          @id @default(cuid()) @db.VarChar(191)
+  projectId   String          @db.VarChar(191)
+  title       String          @db.VarChar(191)
+  url         String          @db.VarChar(500)
+  type        ProjectLinkType @default(OTHER)
+  description String?         @db.Text
+  createdBy   String?         @db.VarChar(191)
+  updatedBy   String?         @db.VarChar(191)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean         @default(true)
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+  @@index([type])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("projectLinks")
+}
+
+model ProjectCredential {
+  id             String                @id @default(cuid()) @db.VarChar(191)
+  projectId      String                @db.VarChar(191)
+  title          String                @db.VarChar(191)
+  type           ProjectCredentialType @default(OTHER)
+  username       String?               @db.VarChar(191)
+  encryptedValue String                @db.Text
+  encryptionIv   String                @db.VarChar(64)
+  authTag        String                @db.VarChar(64)
+  host           String?               @db.VarChar(255)
+  port           Int?
+  notes          String?               @db.Text
+  createdBy      String?               @db.VarChar(191)
+  updatedBy      String?               @db.VarChar(191)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean               @default(true)
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+  @@index([type])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("projectCredentials")
+}
+
+model Milestone {
+  id                 String          @id @default(cuid()) @db.VarChar(191)
+  projectId          String          @db.VarChar(191)
+  title              String          @db.VarChar(191)
+  description        String?         @db.Text
+  startDate          DateTime?       @db.Date
+  dueDate            DateTime?       @db.Date
+  responsibleUserId  String?         @db.VarChar(191)
+  status             MilestoneStatus @default(PENDING)
+  progressPercentage Decimal         @default(0.00) @db.Decimal(5, 2)
+  notes              String?         @db.Text
+  createdBy          String?         @db.VarChar(191)
+  updatedBy          String?         @db.VarChar(191)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean         @default(true)
+
+  project         Project  @relation(fields: [projectId], references: [id])
+  responsibleUser User?    @relation("ResponsibleMilestones", fields: [responsibleUserId], references: [id])
+  sprints         Sprint[]
+  tasks           Task[]
+
+  @@index([projectId])
+  @@index([responsibleUserId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("milestones")
+}
+
+model Sprint {
+  id                 String       @id @default(cuid()) @db.VarChar(191)
+  projectId          String       @db.VarChar(191)
+  milestoneId        String       @db.VarChar(191)
+  name               String       @db.VarChar(191)
+  goal               String?      @db.Text
+  startDate          DateTime?    @db.Date
+  endDate            DateTime?    @db.Date
+  status             SprintStatus @default(PLANNING)
+  capacity           Decimal      @default(0.00) @db.Decimal(8, 2)
+  velocity           Decimal      @default(0.00) @db.Decimal(8, 2)
+  storyPoints        Int          @default(0)
+  progressPercentage Decimal      @default(0.00) @db.Decimal(5, 2)
+  createdBy          String?      @db.VarChar(191)
+  updatedBy          String?      @db.VarChar(191)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean      @default(true)
+
+  project   Project   @relation(fields: [projectId], references: [id])
+  milestone Milestone @relation(fields: [milestoneId], references: [id])
+  tasks     Task[]
+
+  @@index([projectId])
+  @@index([milestoneId])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("sprints")
+}
+
+model Task {
+  id                  String       @id @default(cuid()) @db.VarChar(191)
+  projectId           String       @db.VarChar(191)
+  milestoneId         String?      @db.VarChar(191)
+  sprintId            String?      @db.VarChar(191)
+  parentTaskId        String?      @db.VarChar(191)
+  title               String       @db.VarChar(255)
+  description         String?      @db.Text
+  assignedDeveloperId String?      @db.VarChar(191)
+  reviewerId          String?      @db.VarChar(191)
+  priority            TaskPriority @default(MEDIUM)
+  status              TaskStatus   @default(TODO)
+  estimatedHours      Decimal      @default(0.00) @db.Decimal(8, 2)
+  actualHours         Decimal      @default(0.00) @db.Decimal(8, 2)
+  storyPoints         Int          @default(0)
+  progressPercentage  Decimal      @default(0.00) @db.Decimal(5, 2)
+  startDate           DateTime?    @db.Date
+  dueDate             DateTime?    @db.Date
+  completedDate       DateTime?    @db.Date
+  labels              Json?
+  createdBy           String?      @db.VarChar(191)
+  updatedBy           String?      @db.VarChar(191)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  deletedAt           DateTime?
+  isActive            Boolean      @default(true)
+
+  project           Project          @relation(fields: [projectId], references: [id])
+  milestone         Milestone?       @relation(fields: [milestoneId], references: [id])
+  sprint            Sprint?          @relation(fields: [sprintId], references: [id])
+  parentTask        Task?            @relation("Subtasks", fields: [parentTaskId], references: [id])
+  subtasks          Task[]           @relation("Subtasks")
+  assignedDeveloper User?            @relation("AssignedTasks", fields: [assignedDeveloperId], references: [id])
+  reviewer          User?            @relation("ReviewTasks", fields: [reviewerId], references: [id])
+  comments          TaskComment[]
+  attachments       TaskAttachment[]
+  blockers          TaskBlocker[]
+  updates           TaskUpdate[]
+  timeLogs          TaskTimeLog[]
+  timers            TaskTimer[]
+  dependencies      TaskDependency[] @relation("TaskDependencies")
+  dependents        TaskDependency[] @relation("DependentTasks")
+
+  @@index([projectId])
+  @@index([milestoneId])
+  @@index([sprintId])
+  @@index([parentTaskId])
+  @@index([assignedDeveloperId])
+  @@index([reviewerId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("tasks")
+}
+
+model TaskDependency {
+  id              String             @id @default(cuid()) @db.VarChar(191)
+  taskId          String             @db.VarChar(191)
+  dependsOnTaskId String             @db.VarChar(191)
+  type            TaskDependencyType @default(DEPENDS_ON)
+  createdBy       String?            @db.VarChar(191)
+  createdAt       DateTime           @default(now())
+
+  task          Task @relation("TaskDependencies", fields: [taskId], references: [id])
+  dependsOnTask Task @relation("DependentTasks", fields: [dependsOnTaskId], references: [id])
+
+  @@unique([taskId, dependsOnTaskId])
+  @@index([taskId])
+  @@index([dependsOnTaskId])
+  @@index([type])
+  @@map("taskDependencies")
+}
+
+model TaskBlocker {
+  id          String    @id @default(cuid()) @db.VarChar(191)
+  taskId      String    @db.VarChar(191)
+  description String    @db.Text
+  isResolved  Boolean   @default(false)
+  resolvedAt  DateTime?
+  reportedBy  String?   @db.VarChar(191)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  task     Task  @relation(fields: [taskId], references: [id])
+  reporter User? @relation("TaskBlockerReporter", fields: [reportedBy], references: [id])
+
+  @@index([taskId])
+  @@index([isResolved])
+  @@index([reportedBy])
+  @@index([deletedAt])
+  @@map("taskBlockers")
+}
+
+model TaskComment {
+  id        String    @id @default(cuid()) @db.VarChar(191)
+  taskId    String    @db.VarChar(191)
+  userId    String    @db.VarChar(191)
+  comment   String    @db.Text
+  mentions  Json?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("taskComments")
+}
+
+model TaskAttachment {
+  id           String    @id @default(cuid()) @db.VarChar(191)
+  taskId       String    @db.VarChar(191)
+  fileName     String    @db.VarChar(255)
+  originalName String    @db.VarChar(255)
+  mimeType     String    @db.VarChar(150)
+  fileSize     Int
+  storagePath  String    @db.VarChar(500)
+  publicUrl    String?   @db.VarChar(500)
+  uploadedBy   String?   @db.VarChar(191)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  isActive     Boolean   @default(true)
+
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@index([taskId])
+  @@index([mimeType])
+  @@index([uploadedBy])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("taskAttachments")
+}
+
+model TaskUpdate {
+  id                 String      @id @default(cuid()) @db.VarChar(191)
+  taskId             String      @db.VarChar(191)
+  projectId          String      @db.VarChar(191)
+  developerId        String      @db.VarChar(191)
+  previousStatus     TaskStatus?
+  currentStatus      TaskStatus
+  progressPercentage Decimal     @default(0.00) @db.Decimal(5, 2)
+  workDoneToday      String      @db.Text
+  planForTomorrow    String?     @db.Text
+  blockers           String?     @db.Text
+  timeSpent          Decimal     @default(0.00) @db.Decimal(8, 2)
+  updateDate         DateTime    @db.Date
+  createdAt          DateTime    @default(now())
+
+  task      Task    @relation(fields: [taskId], references: [id])
+  project   Project @relation(fields: [projectId], references: [id])
+  developer User    @relation("TaskUpdateDeveloper", fields: [developerId], references: [id])
+
+  @@index([taskId])
+  @@index([projectId])
+  @@index([developerId])
+  @@index([updateDate])
+  @@index([currentStatus])
+  @@map("taskUpdates")
+}
+
+model TaskTimeLog {
+  id          String   @id @default(cuid()) @db.VarChar(191)
+  taskId      String   @db.VarChar(191)
+  projectId   String   @db.VarChar(191)
+  developerId String   @db.VarChar(191)
+  workDate    DateTime @db.Date
+  hoursWorked Decimal  @db.Decimal(8, 2)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  task      Task    @relation(fields: [taskId], references: [id])
+  project   Project @relation(fields: [projectId], references: [id])
+  developer User    @relation("TaskTimeLogDeveloper", fields: [developerId], references: [id])
+
+  @@index([taskId])
+  @@index([projectId])
+  @@index([developerId])
+  @@index([workDate])
+  @@map("taskTimeLogs")
+}
+
+model TaskTimer {
+  id              String    @id @default(cuid()) @db.VarChar(191)
+  taskId          String    @db.VarChar(191)
+  projectId       String    @db.VarChar(191)
+  developerId     String    @db.VarChar(191)
+  startedAt       DateTime  @default(now())
+  stoppedAt       DateTime?
+  durationMinutes Int?
+  description     String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  task      Task    @relation(fields: [taskId], references: [id])
+  project   Project @relation(fields: [projectId], references: [id])
+  developer User    @relation("TaskTimerDeveloper", fields: [developerId], references: [id])
+
+  @@index([taskId])
+  @@index([projectId])
+  @@index([developerId])
+  @@index([startedAt])
+  @@index([stoppedAt])
+  @@map("taskTimers")
+}
+
+model DailyReport {
+  id                  String   @id @default(cuid()) @db.VarChar(191)
+  developerId         String   @db.VarChar(191)
+  projectId           String   @db.VarChar(191)
+  reportDate          DateTime @db.Date
+  generatedSummary    String   @db.Text
+  totalTasksUpdated   Int      @default(0)
+  totalHoursSpent     Decimal  @default(0.00) @db.Decimal(8, 2)
+  blockersSummary     String?  @db.Text
+  tomorrowPlanSummary String?  @db.Text
+  generatedAt         DateTime @default(now())
+  createdAt           DateTime @default(now())
+
+  developer User    @relation("DailyReportDeveloper", fields: [developerId], references: [id])
+  project   Project @relation(fields: [projectId], references: [id])
+
+  @@unique([developerId, projectId, reportDate])
+  @@index([developerId])
+  @@index([projectId])
+  @@index([reportDate])
+  @@map("dailyReports")
+}
+
+model NotificationTemplate {
+  id              String              @id @default(cuid()) @db.VarChar(191)
+  key             String              @unique @db.VarChar(150)
+  type            NotificationType
+  channel         NotificationChannel
+  subjectTemplate String?             @db.VarChar(255)
+  bodyTemplate    String              @db.Text
+  isSystem        Boolean             @default(false)
+  createdBy       String?             @db.VarChar(191)
+  updatedBy       String?             @db.VarChar(191)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  deletedAt       DateTime?
+  isActive        Boolean             @default(true)
+
+  notifications UserNotification[]
+  emailLogs     EmailLog[]
+
+  @@index([type])
+  @@index([channel])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("notificationTemplates")
+}
+
+model UserNotification {
+  id         String             @id @default(cuid()) @db.VarChar(191)
+  userId     String             @db.VarChar(191)
+  templateId String?            @db.VarChar(191)
+  type       NotificationType
+  title      String             @db.VarChar(255)
+  message    String             @db.Text
+  entityType String?            @db.VarChar(100)
+  entityId   String?            @db.VarChar(191)
+  metadata   Json?
+  status     NotificationStatus @default(UNREAD)
+  readAt     DateTime?
+  createdAt  DateTime           @default(now())
+  deletedAt  DateTime?
+
+  user     User                  @relation(fields: [userId], references: [id])
+  template NotificationTemplate? @relation(fields: [templateId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("userNotifications")
+}
+
+model NotificationPreference {
+  id        String              @id @default(cuid()) @db.VarChar(191)
+  userId    String              @db.VarChar(191)
+  type      NotificationType
+  channel   NotificationChannel
+  isEnabled Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, type, channel])
+  @@index([userId])
+  @@index([type])
+  @@index([channel])
+  @@map("notificationPreferences")
+}
+
+model EmailLog {
+  id                String              @id @default(cuid()) @db.VarChar(191)
+  userId            String?             @db.VarChar(191)
+  templateId        String?             @db.VarChar(191)
+  toEmail           String              @db.VarChar(191)
+  subject           String              @db.VarChar(255)
+  body              String              @db.Text
+  status            EmailDeliveryStatus @default(PENDING)
+  provider          String?             @db.VarChar(100)
+  providerMessageId String?             @db.VarChar(191)
+  errorMessage      String?             @db.Text
+  sentAt            DateTime?
+  failedAt          DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  user     User?                 @relation(fields: [userId], references: [id])
+  template NotificationTemplate? @relation(fields: [templateId], references: [id])
+
+  @@index([userId])
+  @@index([templateId])
+  @@index([toEmail])
+  @@index([status])
+  @@index([createdAt])
+  @@map("emailLogs")
+}
+
+model BackgroundJobRun {
+  id           String              @id @default(cuid()) @db.VarChar(191)
+  jobName      String              @db.VarChar(150)
+  runKey       String              @unique @db.VarChar(191)
+  status       BackgroundJobStatus @default(RUNNING)
+  startedAt    DateTime            @default(now())
+  finishedAt   DateTime?
+  summary      Json?
+  errorMessage String?             @db.Text
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([jobName])
+  @@index([status])
+  @@index([startedAt])
+  @@map("backgroundJobRuns")
+}
+
+model CalendarEvent {
+  id          String            @id @default(cuid()) @db.VarChar(191)
+  title       String            @db.VarChar(191)
+  description String?           @db.Text
+  type        CalendarEventType @default(OTHER)
+  startAt     DateTime
+  endAt       DateTime
+  allDay      Boolean           @default(false)
+  projectId   String?           @db.VarChar(191)
+  taskId      String?           @db.VarChar(191)
+  createdBy   String?           @db.VarChar(191)
+  updatedBy   String?           @db.VarChar(191)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean           @default(true)
+
+  @@index([type])
+  @@index([startAt])
+  @@index([endAt])
+  @@index([projectId])
+  @@index([taskId])
+  @@index([deletedAt])
+  @@map("calendarEvents")
+}
+
+model DeveloperLeave {
+  id          String      @id @default(cuid()) @db.VarChar(191)
+  developerId String      @db.VarChar(191)
+  type        LeaveType   @default(FULL_DAY)
+  status      LeaveStatus @default(PENDING)
+  startDate   DateTime    @db.Date
+  endDate     DateTime    @db.Date
+  reason      String?     @db.Text
+  approvedBy  String?     @db.VarChar(191)
+  approvedAt  DateTime?
+  createdBy   String?     @db.VarChar(191)
+  updatedBy   String?     @db.VarChar(191)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean     @default(true)
+
+  developer User @relation("DeveloperLeaves", fields: [developerId], references: [id])
+
+  @@index([developerId])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([deletedAt])
+  @@map("developerLeaves")
+}
+
+model Holiday {
+  id          String    @id @default(cuid()) @db.VarChar(191)
+  name        String    @db.VarChar(191)
+  holidayDate DateTime  @db.Date
+  region      String?   @db.VarChar(100)
+  description String?   @db.Text
+  createdBy   String?   @db.VarChar(191)
+  updatedBy   String?   @db.VarChar(191)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean   @default(true)
+
+  @@unique([holidayDate, region])
+  @@index([holidayDate])
+  @@index([region])
+  @@index([deletedAt])
+  @@map("holidays")
+}

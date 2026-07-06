@@ -1,0 +1,21 @@
+{
+  "name": "project-management-system",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Enterprise project management system for software development companies.",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm --workspace backend run dev",
+    "dev:frontend": "npm --workspace frontend run dev",
+    "build:backend": "npm --workspace backend run build",
+    "build:frontend": "npm --workspace frontend run build",
+    "start:backend": "npm --workspace backend run start",
+    "start:frontend": "npm --workspace frontend run start",
+    "prisma:generate": "npm --workspace backend run prisma:generate",
+    "prisma:migrate": "npm --workspace backend run prisma:migrate",
+    "seed": "npm --workspace backend run seed"
+  }
+}

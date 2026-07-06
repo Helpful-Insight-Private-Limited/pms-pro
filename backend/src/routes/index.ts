@@ -1,0 +1,32 @@
+import { Router } from "express";
+import { activityLogRoutes } from "./activityLogRoutes.js";
+import { advancedReportRoutes } from "./advancedReportRoutes.js";
+import { authRoutes } from "./authRoutes.js";
+import { calendarRoutes } from "./calendarRoutes.js";
+import { chatRoutes } from "./chatRoutes.js";
+import { clientRoutes } from "./clientRoutes.js";
+import { dashboardRoutes } from "./dashboardRoutes.js";
+import { jobRoutes } from "./jobRoutes.js";
+import { masterRoutes } from "./masterRoutes.js";
+import { notificationRoutes } from "./notificationRoutes.js";
+import { permissionRoutes } from "./permissionRoutes.js";
+import { projectRoutes } from "./projectRoutes.js";
+import { roleRoutes } from "./roleRoutes.js";
+import { userRoutes } from "./userRoutes.js";
+
+export const routes = Router();
+
+routes.use("/auth", authRoutes);
+routes.use("/calendar", calendarRoutes);
+routes.use("/chat", chatRoutes);
+routes.use("/dashboard", dashboardRoutes);
+routes.use("/users", userRoutes);
+routes.use("/clients", clientRoutes);
+routes.use("/roles", roleRoutes);
+routes.use("/permissions", permissionRoutes);
+routes.use("/projects", projectRoutes);
+routes.use("/notifications", notificationRoutes);
+routes.use("/jobs", jobRoutes);
+routes.use("/masters", masterRoutes);
+routes.use("/reports", advancedReportRoutes);
+routes.use("/activity-logs", activityLogRoutes);

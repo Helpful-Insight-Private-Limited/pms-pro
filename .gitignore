@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Build outputs
+dist/
+.next/
+out/
+build/
+coverage/
+
+# TypeScript / framework cache
+*.tsbuildinfo
+.turbo/
+.cache/
+
+# Logs and runtime output
+*.log
+*.out
+*.err
+server*.log
+server*.out.log
+server*.err.log
+frontend*.out.log
+frontend*.err.log
+
+# Local uploads and generated runtime assets
+backend/uploads/
+
+# Local agent/tooling state
+.agents/
+.codex/
+.git-push/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
