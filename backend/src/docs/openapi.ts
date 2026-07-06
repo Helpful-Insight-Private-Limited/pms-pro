@@ -341,7 +341,7 @@ export const openApiDocument = {
         responses: { "200": { description: "Service is healthy" } }
       }
     },
-    "/api/auth/login": {
+    "/auth/login": {
       post: {
         tags: ["Auth"],
         summary: "Login with email and password",
@@ -352,14 +352,14 @@ export const openApiDocument = {
         responses: { "200": { description: "Logged in" }, "401": { $ref: "#/components/responses/Unauthorized" } }
       }
     },
-    "/api/auth/refresh": {
+    "/auth/refresh": {
       post: {
         tags: ["Auth"],
         summary: "Rotate refresh token",
         responses: { "200": { description: "Token refreshed" }, "401": { $ref: "#/components/responses/Unauthorized" } }
       }
     },
-    "/api/auth/logout": {
+    "/auth/logout": {
       post: {
         tags: ["Auth"],
         summary: "Logout current session",
@@ -367,7 +367,7 @@ export const openApiDocument = {
         responses: { "200": { description: "Logged out" }, "401": { $ref: "#/components/responses/Unauthorized" } }
       }
     },
-    "/api/auth/logout-all": {
+    "/auth/logout-all": {
       post: {
         tags: ["Auth"],
         summary: "Logout all sessions",
@@ -375,7 +375,7 @@ export const openApiDocument = {
         responses: { "200": { description: "All sessions logged out" } }
       }
     },
-    "/api/auth/me": {
+    "/auth/me": {
       get: {
         tags: ["Auth"],
         summary: "Get current user profile",
@@ -383,7 +383,7 @@ export const openApiDocument = {
         responses: { "200": { description: "Current user" } }
       }
     },
-    "/api/auth/profile": {
+    "/auth/profile": {
       patch: {
         tags: ["Auth"],
         summary: "Update current user profile",
@@ -395,7 +395,7 @@ export const openApiDocument = {
         responses: { "200": { description: "Profile updated" } }
       }
     },
-    "/api/auth/change-password": {
+    "/auth/change-password": {
       post: {
         tags: ["Auth"],
         summary: "Change own password",
@@ -403,7 +403,7 @@ export const openApiDocument = {
         responses: { "200": { description: "Password changed" } }
       }
     },
-    "/api/users": {
+    "/users": {
       get: {
         tags: ["Users"],
         summary: "List users",
@@ -417,29 +417,29 @@ export const openApiDocument = {
         responses: { "201": { description: "User created" } }
       }
     },
-    "/api/users/{id}": {
+    "/users/{id}": {
       get: { tags: ["Users"], summary: "Get user", security: [{ bearerAuth: [] }], parameters: [{ $ref: "#/components/parameters/id" }], responses: { "200": { description: "User" } } },
       patch: { tags: ["Users"], summary: "Update user", security: [{ bearerAuth: [] }], parameters: [{ $ref: "#/components/parameters/id" }], responses: { "200": { description: "User updated" } } },
       delete: { tags: ["Users"], summary: "Delete user", security: [{ bearerAuth: [] }], parameters: [{ $ref: "#/components/parameters/id" }], responses: { "200": { description: "User deleted" } } }
     },
-    "/api/users/{id}/roles": {
+    "/users/{id}/roles": {
       put: { tags: ["Users"], summary: "Assign user roles", security: [{ bearerAuth: [] }], parameters: [{ $ref: "#/components/parameters/id" }], responses: { "200": { description: "Roles assigned" } } }
     },
-    "/api/roles": {
+    "/roles": {
       get: { tags: ["Roles"], summary: "List roles", security: [{ bearerAuth: [] }], responses: { "200": { description: "Roles" } } },
       post: { tags: ["Roles"], summary: "Create role", security: [{ bearerAuth: [] }], responses: { "201": { description: "Role created" } } }
     },
-    "/api/roles/{id}": {
+    "/roles/{id}": {
       patch: { tags: ["Roles"], summary: "Update role", security: [{ bearerAuth: [] }], parameters: [{ $ref: "#/components/parameters/id" }], responses: { "200": { description: "Role updated" } } },
       delete: { tags: ["Roles"], summary: "Delete role", security: [{ bearerAuth: [] }], parameters: [{ $ref: "#/components/parameters/id" }], responses: { "200": { description: "Role deleted" } } }
     },
-    "/api/roles/{id}/permissions": {
+    "/roles/{id}/permissions": {
       put: { tags: ["Roles"], summary: "Assign role permissions", security: [{ bearerAuth: [] }], parameters: [{ $ref: "#/components/parameters/id" }], responses: { "200": { description: "Permissions assigned" } } }
     },
-    "/api/permissions": {
+    "/permissions": {
       get: { tags: ["Permissions"], summary: "List permissions", security: [{ bearerAuth: [] }], responses: { "200": { description: "Permissions" } } }
     },
-    "/api/clients": {
+    "/clients": {
       get: { tags: ["Clients"], summary: "List clients", security: [{ bearerAuth: [] }], responses: { "200": { description: "Clients" } } },
       post: {
         tags: ["Clients"],
@@ -452,7 +452,7 @@ export const openApiDocument = {
         responses: { "201": { description: "Client created" } }
       }
     },
-    "/api/clients/{id}": {
+    "/clients/{id}": {
       get: { tags: ["Clients"], summary: "Get client", security: [{ bearerAuth: [] }], parameters: [{ $ref: "#/components/parameters/id" }], responses: { "200": { description: "Client" } } },
       patch: {
         tags: ["Clients"],
@@ -508,148 +508,148 @@ function secured(method: string, tag: string, summary: string, bodyRef?: string)
 }
 
 Object.assign(openApiDocument.paths, {
-  "/api/dashboard/me": secured("get", "Dashboards", "Get dashboard for current user's primary role"),
-  "/api/dashboard/admin": secured("get", "Dashboards", "Get admin dashboard"),
-  "/api/dashboard/project-manager": secured("get", "Dashboards", "Get project manager dashboard"),
-  "/api/dashboard/team-leader": secured("get", "Dashboards", "Get team leader dashboard"),
-  "/api/dashboard/team-member": secured("get", "Dashboards", "Get team member dashboard"),
-  "/api/calendar/events": {
+  "/dashboard/me": secured("get", "Dashboards", "Get dashboard for current user's primary role"),
+  "/dashboard/admin": secured("get", "Dashboards", "Get admin dashboard"),
+  "/dashboard/project-manager": secured("get", "Dashboards", "Get project manager dashboard"),
+  "/dashboard/team-leader": secured("get", "Dashboards", "Get team leader dashboard"),
+  "/dashboard/team-member": secured("get", "Dashboards", "Get team member dashboard"),
+  "/calendar/events": {
     ...secured("get", "Calendar", "List accessible calendar events, including generated project, task, leave, and holiday items"),
     ...secured("post", "Calendar", "Create manual calendar event", "#/components/schemas/CalendarEventRequest")
   },
-  "/api/calendar/events/{id}": {
+  "/calendar/events/{id}": {
     ...secured("patch", "Calendar", "Update manual calendar event", "#/components/schemas/CalendarEventRequest"),
     ...secured("delete", "Calendar", "Delete manual calendar event")
   },
-  "/api/calendar/leaves": {
+  "/calendar/leaves": {
     ...secured("get", "Calendar", "List leave requests"),
     ...secured("post", "Calendar", "Create leave request", "#/components/schemas/DeveloperLeaveRequest")
   },
-  "/api/calendar/leaves/{id}": {
+  "/calendar/leaves/{id}": {
     ...secured("patch", "Calendar", "Update leave request", "#/components/schemas/DeveloperLeaveRequest"),
     ...secured("delete", "Calendar", "Delete leave request")
   },
-  "/api/calendar/holidays": {
+  "/calendar/holidays": {
     ...secured("get", "Calendar", "List holidays"),
     ...secured("post", "Calendar", "Create holiday", "#/components/schemas/HolidayRequest")
   },
-  "/api/calendar/holidays/{id}": {
+  "/calendar/holidays/{id}": {
     ...secured("patch", "Calendar", "Update holiday", "#/components/schemas/HolidayRequest"),
     ...secured("delete", "Calendar", "Delete holiday")
   },
-  "/api/calendar/availability": secured("get", "Calendar", "Calculate developer availability for a date range"),
-  "/api/calendar/workload": secured("get", "Calendar", "Calculate developer workload and utilization for a date range"),
-  "/api/masters/currencies": {
+  "/calendar/availability": secured("get", "Calendar", "Calculate developer availability for a date range"),
+  "/calendar/workload": secured("get", "Calendar", "Calculate developer workload and utilization for a date range"),
+  "/masters/currencies": {
     ...secured("get", "Masters", "List active currencies"),
     ...secured("post", "Masters", "Create currency", "#/components/schemas/CurrencyRequest")
   },
-  "/api/masters/currencies/{id}": {
+  "/masters/currencies/{id}": {
     ...secured("patch", "Masters", "Update currency", "#/components/schemas/CurrencyRequest"),
     ...secured("delete", "Masters", "Delete currency")
   },
-  "/api/masters/technology-stacks": {
+  "/masters/technology-stacks": {
     ...secured("get", "Masters", "List active technology stacks"),
     ...secured("post", "Masters", "Create technology stack", "#/components/schemas/TechnologyStackRequest")
   },
-  "/api/masters/technology-stacks/{id}": {
+  "/masters/technology-stacks/{id}": {
     ...secured("patch", "Masters", "Update technology stack", "#/components/schemas/TechnologyStackRequest"),
     ...secured("delete", "Masters", "Delete technology stack")
   },
-  "/api/reports/projects": secured("get", "Reports", "Get project reports with filters"),
-  "/api/reports/developers": secured("get", "Reports", "Get developer reports with filters"),
-  "/api/reports/team": secured("get", "Reports", "Get team allocation reports with filters"),
-  "/api/reports/costing": secured("get", "Reports", "Get costing reports from time logs and historical rates"),
-  "/api/reports/estimated-vs-actual": secured("get", "Reports", "Get estimated versus actual hours and cost report"),
-  "/api/reports/budget-overruns": secured("get", "Reports", "Get budget overrun report"),
-  "/api/projects": {
+  "/reports/projects": secured("get", "Reports", "Get project reports with filters"),
+  "/reports/developers": secured("get", "Reports", "Get developer reports with filters"),
+  "/reports/team": secured("get", "Reports", "Get team allocation reports with filters"),
+  "/reports/costing": secured("get", "Reports", "Get costing reports from time logs and historical rates"),
+  "/reports/estimated-vs-actual": secured("get", "Reports", "Get estimated versus actual hours and cost report"),
+  "/reports/budget-overruns": secured("get", "Reports", "Get budget overrun report"),
+  "/projects": {
     ...secured("get", "Projects", "List projects"),
     ...secured("post", "Projects", "Create project", "#/components/schemas/ProjectRequest")
   },
-  "/api/projects/{projectId}": {
+  "/projects/{projectId}": {
     ...secured("get", "Projects", "Get project"),
     ...secured("patch", "Projects", "Update project", "#/components/schemas/ProjectRequest"),
     ...secured("delete", "Projects", "Delete project")
   },
-  "/api/projects/{projectId}/members": secured("put", "Projects", "Assign project members"),
-  "/api/projects/{projectId}/attachments": {
+  "/projects/{projectId}/members": secured("put", "Projects", "Assign project members"),
+  "/projects/{projectId}/attachments": {
     ...secured("get", "Project Assets", "List project attachments"),
     ...secured("post", "Project Assets", "Create project attachment metadata")
   },
-  "/api/projects/{projectId}/links": {
+  "/projects/{projectId}/links": {
     ...secured("get", "Project Assets", "List project links"),
     ...secured("post", "Project Assets", "Create project link")
   },
-  "/api/projects/{projectId}/credentials": {
+  "/projects/{projectId}/credentials": {
     ...secured("get", "Project Assets", "List project credentials without secrets"),
     ...secured("post", "Project Assets", "Create encrypted project credential")
   },
-  "/api/projects/{projectId}/credentials/{id}/reveal": secured("get", "Project Assets", "Reveal project credential secret"),
-  "/api/projects/{projectId}/milestones": {
+  "/projects/{projectId}/credentials/{id}/reveal": secured("get", "Project Assets", "Reveal project credential secret"),
+  "/projects/{projectId}/milestones": {
     ...secured("get", "Milestones", "List milestones"),
     ...secured("post", "Milestones", "Create milestone", "#/components/schemas/MilestoneRequest")
   },
-  "/api/projects/{projectId}/milestones/mark-delayed": secured("post", "Milestones", "Mark delayed milestones"),
-  "/api/projects/{projectId}/milestones/{milestoneId}": {
+  "/projects/{projectId}/milestones/mark-delayed": secured("post", "Milestones", "Mark delayed milestones"),
+  "/projects/{projectId}/milestones/{milestoneId}": {
     ...secured("get", "Milestones", "Get milestone"),
     ...secured("patch", "Milestones", "Update milestone", "#/components/schemas/MilestoneRequest"),
     ...secured("delete", "Milestones", "Delete milestone")
   },
-  "/api/projects/{projectId}/milestones/{milestoneId}/sprints": {
+  "/projects/{projectId}/milestones/{milestoneId}/sprints": {
     ...secured("get", "Sprints", "List sprints"),
     ...secured("post", "Sprints", "Create sprint", "#/components/schemas/SprintRequest")
   },
-  "/api/projects/{projectId}/milestones/{milestoneId}/sprints/{sprintId}": {
+  "/projects/{projectId}/milestones/{milestoneId}/sprints/{sprintId}": {
     ...secured("get", "Sprints", "Get sprint"),
     ...secured("patch", "Sprints", "Update sprint", "#/components/schemas/SprintRequest"),
     ...secured("delete", "Sprints", "Delete sprint")
   },
-  "/api/projects/{projectId}/milestones/{milestoneId}/sprints/{sprintId}/health": secured("get", "Sprints", "Get sprint health"),
-  "/api/projects/{projectId}/tasks": {
+  "/projects/{projectId}/milestones/{milestoneId}/sprints/{sprintId}/health": secured("get", "Sprints", "Get sprint health"),
+  "/projects/{projectId}/tasks": {
     ...secured("get", "Tasks", "List tasks"),
     ...secured("post", "Tasks", "Create task", "#/components/schemas/TaskRequest")
   },
-  "/api/projects/{projectId}/tasks/{taskId}": {
+  "/projects/{projectId}/tasks/{taskId}": {
     ...secured("get", "Tasks", "Get task"),
     ...secured("patch", "Tasks", "Update task", "#/components/schemas/TaskRequest"),
     ...secured("delete", "Tasks", "Delete task")
   },
-  "/api/projects/{projectId}/tasks/{taskId}/comments": {
+  "/projects/{projectId}/tasks/{taskId}/comments": {
     ...secured("get", "Tasks", "List task comments"),
     ...secured("post", "Tasks", "Add task comment")
   },
-  "/api/projects/{projectId}/tasks/{taskId}/blockers": secured("post", "Tasks", "Add task blocker"),
-  "/api/projects/{projectId}/tasks/{taskId}/blockers/{id}": secured("patch", "Tasks", "Resolve or reopen task blocker"),
-  "/api/projects/{projectId}/tasks/{taskId}/attachments": {
+  "/projects/{projectId}/tasks/{taskId}/blockers": secured("post", "Tasks", "Add task blocker"),
+  "/projects/{projectId}/tasks/{taskId}/blockers/{id}": secured("patch", "Tasks", "Resolve or reopen task blocker"),
+  "/projects/{projectId}/tasks/{taskId}/attachments": {
     ...secured("get", "Tasks", "List task attachments"),
     ...secured("post", "Tasks", "Create task attachment metadata")
   },
-  "/api/projects/{projectId}/tasks/{taskId}/updates": secured("post", "Tasks", "Create task update", "#/components/schemas/TaskUpdateRequest"),
-  "/api/projects/{projectId}/tasks/{taskId}/time-logs": {
+  "/projects/{projectId}/tasks/{taskId}/updates": secured("post", "Tasks", "Create task update", "#/components/schemas/TaskUpdateRequest"),
+  "/projects/{projectId}/tasks/{taskId}/time-logs": {
     ...secured("get", "Costing", "List task time logs"),
     ...secured("post", "Costing", "Log task time", "#/components/schemas/TaskTimeLogRequest")
   },
-  "/api/projects/{projectId}/task-updates": secured("get", "Tasks", "List task updates"),
-  "/api/projects/{projectId}/daily-reports/generate": secured("post", "Tasks", "Generate daily reports"),
-  "/api/projects/{projectId}/daily-reports": secured("get", "Tasks", "List daily reports"),
-  "/api/projects/{projectId}/daily-summary": secured("get", "Tasks", "Get daily project summary"),
-  "/api/projects/{projectId}/time-logs": secured("get", "Costing", "List project time logs"),
-  "/api/projects/{projectId}/costing": secured("get", "Costing", "Get project costing and budget summary"),
-  "/api/notifications": secured("get", "Notifications", "List my notifications"),
-  "/api/notifications/{id}/read": secured("patch", "Notifications", "Mark notification read"),
-  "/api/notifications/read-all": secured("patch", "Notifications", "Mark all notifications read"),
-  "/api/notifications/preferences": {
+  "/projects/{projectId}/task-updates": secured("get", "Tasks", "List task updates"),
+  "/projects/{projectId}/daily-reports/generate": secured("post", "Tasks", "Generate daily reports"),
+  "/projects/{projectId}/daily-reports": secured("get", "Tasks", "List daily reports"),
+  "/projects/{projectId}/daily-summary": secured("get", "Tasks", "Get daily project summary"),
+  "/projects/{projectId}/time-logs": secured("get", "Costing", "List project time logs"),
+  "/projects/{projectId}/costing": secured("get", "Costing", "Get project costing and budget summary"),
+  "/notifications": secured("get", "Notifications", "List my notifications"),
+  "/notifications/{id}/read": secured("patch", "Notifications", "Mark notification read"),
+  "/notifications/read-all": secured("patch", "Notifications", "Mark all notifications read"),
+  "/notifications/preferences": {
     ...secured("get", "Notifications", "List notification preferences"),
     ...secured("put", "Notifications", "Update notification preferences", "#/components/schemas/NotificationPreferencesRequest")
   },
-  "/api/notifications/domain-events": secured("post", "Notifications", "Create notifications from a domain event", "#/components/schemas/DomainNotificationRequest"),
-  "/api/notifications/templates": {
+  "/notifications/domain-events": secured("post", "Notifications", "Create notifications from a domain event", "#/components/schemas/DomainNotificationRequest"),
+  "/notifications/templates": {
     ...secured("get", "Notifications", "List notification templates"),
     ...secured("post", "Notifications", "Create notification template", "#/components/schemas/NotificationTemplateRequest")
   },
-  "/api/notifications/templates/{id}": secured("patch", "Notifications", "Update notification template", "#/components/schemas/NotificationTemplateRequest"),
-  "/api/notifications/email-logs": secured("get", "Notifications", "List email logs"),
-  "/api/jobs/runs": secured("get", "Jobs", "List background job runs"),
-  "/api/jobs/run": secured("post", "Jobs", "Run all jobs or a selected job", "#/components/schemas/RunJobRequest"),
-  "/api/activity-logs": secured("get", "Activity Logs", "List searchable activity logs"),
-  "/api/activity-logs/{id}": secured("get", "Activity Logs", "Get activity log by id")
+  "/notifications/templates/{id}": secured("patch", "Notifications", "Update notification template", "#/components/schemas/NotificationTemplateRequest"),
+  "/notifications/email-logs": secured("get", "Notifications", "List email logs"),
+  "/jobs/runs": secured("get", "Jobs", "List background job runs"),
+  "/jobs/run": secured("post", "Jobs", "Run all jobs or a selected job", "#/components/schemas/RunJobRequest"),
+  "/activity-logs": secured("get", "Activity Logs", "List searchable activity logs"),
+  "/activity-logs/{id}": secured("get", "Activity Logs", "Get activity log by id")
 });

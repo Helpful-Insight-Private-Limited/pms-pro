@@ -49,8 +49,8 @@ Add cron and background worker processing.
 
 ## API Endpoints
 
-- `GET /api/jobs/runs`
-- `POST /api/jobs/run`
+- `GET /jobs/runs`
+- `POST /jobs/run`
 
 ## Commands
 

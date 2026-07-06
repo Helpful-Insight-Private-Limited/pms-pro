@@ -142,21 +142,21 @@ Password verification:
 Base route:
 
 ```text
-/api/auth
+/auth
 ```
 
 | Route | Method | Controller | Service | Permission | Purpose |
 | --- | --- | --- | --- | --- | --- |
-| `/api/auth/login` | POST | `authController.login` | `authService.login` | Public | Login with email/password |
-| `/api/auth/refresh` | POST | `authController.refresh` | `authService.refreshToken` | Public with refresh token | Rotate refresh token |
-| `/api/auth/logout` | POST | `authController.logout` | `authService.logout` | Authenticated | Revoke current refresh token |
-| `/api/auth/logout-all` | POST | `authController.logoutAll` | `authService.logoutAll` | Authenticated | Revoke all user refresh tokens |
-| `/api/auth/me` | GET | `authController.me` | `authService.getCurrentUser` | Authenticated | Return current user profile and permissions |
-| `/api/auth/change-password` | POST | `authController.changePassword` | `authService.changePassword` | Authenticated | Change own password |
+| `/auth/login` | POST | `authController.login` | `authService.login` | Public | Login with email/password |
+| `/auth/refresh` | POST | `authController.refresh` | `authService.refreshToken` | Public with refresh token | Rotate refresh token |
+| `/auth/logout` | POST | `authController.logout` | `authService.logout` | Authenticated | Revoke current refresh token |
+| `/auth/logout-all` | POST | `authController.logoutAll` | `authService.logoutAll` | Authenticated | Revoke all user refresh tokens |
+| `/auth/me` | GET | `authController.me` | `authService.getCurrentUser` | Authenticated | Return current user profile and permissions |
+| `/auth/change-password` | POST | `authController.changePassword` | `authService.changePassword` | Authenticated | Change own password |
 
 ## Auth Request and Response Contracts
 
-### POST `/api/auth/login`
+### POST `/auth/login`
 
 Request:
 
@@ -189,7 +189,7 @@ Response:
 
 The refresh token should be returned as an HTTP-only cookie in browser deployments.
 
-### POST `/api/auth/refresh`
+### POST `/auth/refresh`
 
 Request:
 
@@ -210,7 +210,7 @@ Response:
 }
 ```
 
-### POST `/api/auth/logout`
+### POST `/auth/logout`
 
 Response:
 
@@ -221,7 +221,7 @@ Response:
 }
 ```
 
-### GET `/api/auth/me`
+### GET `/auth/me`
 
 Response:
 
@@ -247,7 +247,7 @@ Response:
 }
 ```
 
-### POST `/api/auth/change-password`
+### POST `/auth/change-password`
 
 Request:
 
@@ -276,25 +276,25 @@ Security rule:
 Base routes:
 
 ```text
-/api/users
-/api/roles
-/api/permissions
+/users
+/roles
+/permissions
 ```
 
 | Route | Method | Controller | Service | Required Permission | Purpose |
 | --- | --- | --- | --- | --- | --- |
-| `/api/users` | POST | `userController.create` | `userService.createUser` | `user.create` | Create user |
-| `/api/users` | GET | `userController.list` | `userService.listUsers` | `user.view` | List users |
-| `/api/users/:id` | GET | `userController.getById` | `userService.getUserById` | `user.view` | View user |
-| `/api/users/:id` | PATCH | `userController.update` | `userService.updateUser` | `user.update` | Update user |
-| `/api/users/:id` | DELETE | `userController.remove` | `userService.softDeleteUser` | `user.delete` | Soft delete user |
-| `/api/users/:id/roles` | PUT | `userController.assignRoles` | `userService.assignRoles` | `permission.assign` | Replace user roles |
-| `/api/roles` | POST | `roleController.create` | `roleService.createRole` | `role.create` | Create role |
-| `/api/roles` | GET | `roleController.list` | `roleService.listRoles` | `role.view` | List roles |
-| `/api/roles/:id` | PATCH | `roleController.update` | `roleService.updateRole` | `role.update` | Update role |
-| `/api/roles/:id` | DELETE | `roleController.remove` | `roleService.softDeleteRole` | `role.delete` | Soft delete role |
-| `/api/roles/:id/permissions` | PUT | `roleController.assignPermissions` | `roleService.assignPermissions` | `permission.assign` | Replace role permissions |
-| `/api/permissions` | GET | `permissionController.list` | `permissionService.listPermissions` | `permission.view` | List permissions |
+| `/users` | POST | `userController.create` | `userService.createUser` | `user.create` | Create user |
+| `/users` | GET | `userController.list` | `userService.listUsers` | `user.view` | List users |
+| `/users/:id` | GET | `userController.getById` | `userService.getUserById` | `user.view` | View user |
+| `/users/:id` | PATCH | `userController.update` | `userService.updateUser` | `user.update` | Update user |
+| `/users/:id` | DELETE | `userController.remove` | `userService.softDeleteUser` | `user.delete` | Soft delete user |
+| `/users/:id/roles` | PUT | `userController.assignRoles` | `userService.assignRoles` | `permission.assign` | Replace user roles |
+| `/roles` | POST | `roleController.create` | `roleService.createRole` | `role.create` | Create role |
+| `/roles` | GET | `roleController.list` | `roleService.listRoles` | `role.view` | List roles |
+| `/roles/:id` | PATCH | `roleController.update` | `roleService.updateRole` | `role.update` | Update role |
+| `/roles/:id` | DELETE | `roleController.remove` | `roleService.softDeleteRole` | `role.delete` | Soft delete role |
+| `/roles/:id/permissions` | PUT | `roleController.assignPermissions` | `roleService.assignPermissions` | `permission.assign` | Replace role permissions |
+| `/permissions` | GET | `permissionController.list` | `permissionService.listPermissions` | `permission.view` | List permissions |
 
 ## Middleware Design
 
@@ -534,9 +534,9 @@ Recommended rate limits:
 
 | Endpoint | Limit |
 | --- | --- |
-| `/api/auth/login` | 5 attempts per 15 minutes per IP/email combination |
-| `/api/auth/refresh` | 60 requests per 15 minutes per IP/session |
-| `/api/auth/change-password` | 5 attempts per hour per user |
+| `/auth/login` | 5 attempts per 15 minutes per IP/email combination |
+| `/auth/refresh` | 60 requests per 15 minutes per IP/session |
+| `/auth/change-password` | 5 attempts per hour per user |
 | User/role management APIs | 100 requests per 15 minutes per user |
 
 Failed login attempts should be logged for security monitoring.

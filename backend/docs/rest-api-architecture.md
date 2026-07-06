@@ -6,16 +6,16 @@ All application routes are mounted under `/api`. Public health/docs routes are `
 
 Primary modules:
 
-- Auth: `/api/auth/*`
-- Dashboards: `/api/dashboard/*`
-- Users and RBAC: `/api/users`, `/api/roles`, `/api/permissions`
-- Masters: `/api/masters/currencies`, `/api/masters/technology-stacks`
-- Clients: `/api/clients`
-- Projects: `/api/projects`
-- Milestones, sprints, tasks and costing: nested under `/api/projects/{projectId}`
-- Notifications and jobs: `/api/notifications`, `/api/jobs`
-- Reports and audit: `/api/reports`, `/api/activity-logs`
-- Calendar and availability: `/api/calendar/*`
+- Auth: `/auth/*`
+- Dashboards: `/dashboard/*`
+- Users and RBAC: `/users`, `/roles`, `/permissions`
+- Masters: `/masters/currencies`, `/masters/technology-stacks`
+- Clients: `/clients`
+- Projects: `/projects`
+- Milestones, sprints, tasks and costing: nested under `/projects/{projectId}`
+- Notifications and jobs: `/notifications`, `/jobs`
+- Reports and audit: `/reports`, `/activity-logs`
+- Calendar and availability: `/calendar/*`
 
 The executable API catalog is maintained in `src/docs/openapi.ts` and served by Swagger.
 
@@ -74,7 +74,7 @@ Common status codes:
 
 ## API Versioning Strategy
 
-The current API is unversioned under `/api` while the product is pre-release. The first public stable contract should be mounted under `/api/v1`, keeping `/api` as an internal compatibility alias during transition.
+The current API is unversioned under `/api` while the product is pre-release. The first public stable contract should be mounted under `/v1`, keeping `/api` as an internal compatibility alias during transition.
 
 Breaking changes require:
 

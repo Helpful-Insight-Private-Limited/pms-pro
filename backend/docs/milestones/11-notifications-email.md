@@ -40,16 +40,16 @@ Build in-app and email notification infrastructure.
 
 ## API Endpoints
 
-- `GET /api/notifications`
-- `PATCH /api/notifications/:id/read`
-- `PATCH /api/notifications/read-all`
-- `GET /api/notifications/preferences`
-- `PUT /api/notifications/preferences`
-- `POST /api/notifications/domain-events`
-- `GET /api/notifications/templates`
-- `POST /api/notifications/templates`
-- `PATCH /api/notifications/templates/:id`
-- `GET /api/notifications/email-logs`
+- `GET /notifications`
+- `PATCH /notifications/:id/read`
+- `PATCH /notifications/read-all`
+- `GET /notifications/preferences`
+- `PUT /notifications/preferences`
+- `POST /notifications/domain-events`
+- `GET /notifications/templates`
+- `POST /notifications/templates`
+- `PATCH /notifications/templates/:id`
+- `GET /notifications/email-logs`
 
 ## Verification
 

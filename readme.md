@@ -1,8 +1,6 @@
-You are a Principal Software Architect, Senior Database Architect, Backend Lead, and Product Architect with 15+ years of experience designing enterprise SaaS applications like Jira, ClickUp, Monday.com, Asana, and Azure DevOps.
+Project Management System for software development companies.
 
-I want to build a production-ready Project Management System for software development companies.
-
-Use the latest stable versions of:
+Use of latest stable versions of:
 
 Frontend:
 - Next.js
@@ -29,7 +27,7 @@ Authentication:
 MAIN OBJECTIVE
 ====================================================
 
-Create a complete production-ready architecture and MySQL database schema for this system.
+Complete production-ready architecture and MySQL database schema for this system.
 
 The system should support:
 
@@ -876,8 +874,8 @@ Provide:
 14. Development milestones
 15. Best practices for scalability and production deployment
 
-Design this like a serious enterprise SaaS application.
+Enterprise SaaS application.
 
 Do not simplify.
 
-Make it production-ready.
+Production-ready.

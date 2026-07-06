@@ -9,7 +9,7 @@ export function setRefreshTokenCookie(res: Response, refreshToken: string) {
     secure: env.nodeEnv === "production",
     sameSite: "lax",
     maxAge: env.refreshTokenTtlDays * 24 * 60 * 60 * 1000,
-    path: "/api/auth"
+    path: "/auth"
   });
 }
 
@@ -18,7 +18,7 @@ export function clearRefreshTokenCookie(res: Response) {
     httpOnly: true,
     secure: env.nodeEnv === "production",
     sameSite: "lax",
-    path: "/api/auth"
+    path: "/auth"
   });
 }
 

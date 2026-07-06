@@ -33,11 +33,11 @@ Expose role-specific dashboard APIs.
 
 ## API Endpoints
 
-- `GET /api/dashboard/me`
-- `GET /api/dashboard/admin`
-- `GET /api/dashboard/project-manager`
-- `GET /api/dashboard/team-leader`
-- `GET /api/dashboard/team-member`
+- `GET /dashboard/me`
+- `GET /dashboard/admin`
+- `GET /dashboard/project-manager`
+- `GET /dashboard/team-leader`
+- `GET /dashboard/team-member`
 
 ## Dashboard Data
 

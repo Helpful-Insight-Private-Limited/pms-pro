@@ -37,10 +37,10 @@ Implement time tracking and project costing calculations.
 
 ## API Endpoints
 
-- `POST /api/projects/:projectId/tasks/:taskId/time-logs`
-- `GET /api/projects/:projectId/tasks/:taskId/time-logs`
-- `GET /api/projects/:projectId/time-logs`
-- `GET /api/projects/:projectId/costing`
+- `POST /projects/:projectId/tasks/:taskId/time-logs`
+- `GET /projects/:projectId/tasks/:taskId/time-logs`
+- `GET /projects/:projectId/time-logs`
+- `GET /projects/:projectId/costing`
 
 ## Verification
 

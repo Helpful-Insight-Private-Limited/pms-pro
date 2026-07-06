@@ -55,7 +55,7 @@ Implemented.
 - Login works with seeded admin.
 - Refresh token rotation works.
 - Logout revokes refresh token.
-- `/api/auth/me` returns user, roles, and permissions.
+- `/auth/me` returns user, roles, and permissions.
 - RBAC middleware protects user, role, and permission APIs.
 
 ## Verification

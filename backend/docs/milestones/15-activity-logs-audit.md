@@ -44,8 +44,8 @@ Track important system activity.
 
 ## API Endpoints
 
-- `GET /api/activity-logs`
-- `GET /api/activity-logs/:id`
+- `GET /activity-logs`
+- `GET /activity-logs/:id`
 
 ## Supported Filters
 

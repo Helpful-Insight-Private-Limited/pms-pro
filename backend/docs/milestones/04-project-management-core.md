@@ -22,12 +22,12 @@ Build the core project module.
 
 ## API Scope
 
-- `POST /api/projects`
-- `GET /api/projects`
-- `GET /api/projects/:id`
-- `PATCH /api/projects/:id`
-- `DELETE /api/projects/:id`
-- `PUT /api/projects/:id/members`
+- `POST /projects`
+- `GET /projects`
+- `GET /projects/:id`
+- `PATCH /projects/:id`
+- `DELETE /projects/:id`
+- `PUT /projects/:id/members`
 
 ## Completion Criteria
 

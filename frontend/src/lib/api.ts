@@ -404,7 +404,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}) {
   }))) as ApiResponse<T>;
 
   if (response.status === 401 || payload.error?.code === "UNAUTHORIZED") {
-    if (typeof window !== "undefined" && !path.startsWith("/api/auth/login")) {
+    if (typeof window !== "undefined" && !path.startsWith("/auth/login")) {
       clearSession();
       const next = `${window.location.pathname}${window.location.search}`;
       window.location.href = `/login?next=${encodeURIComponent(next)}`;
@@ -476,235 +476,235 @@ function del<T>(path: string) {
 
 export const api = {
   auth: {
-    login: (body: { email: string; password: string }) => post<LoginResponse>("/api/auth/login", body),
-    refresh: () => post<{ accessToken: string }>("/api/auth/refresh"),
-    logout: () => post<{ message?: string }>("/api/auth/logout"),
-    logoutAll: () => post<{ message?: string }>("/api/auth/logout-all"),
-    me: <T = AuthUser>() => get<T>("/api/auth/me"),
-    updateProfile: <T = AuthUser>(body: UpdateProfileInput) => patch<T>("/api/auth/profile", body),
-    uploadAvatar: <T = AuthUser>(body: FormData) => postForm<T>("/api/auth/profile/avatar", body),
-    changePassword: (body: { currentPassword: string; newPassword: string }) => post<{ message?: string }>("/api/auth/change-password", body)
+    login: (body: { email: string; password: string }) => post<LoginResponse>("/auth/login", body),
+    refresh: () => post<{ accessToken: string }>("/auth/refresh"),
+    logout: () => post<{ message?: string }>("/auth/logout"),
+    logoutAll: () => post<{ message?: string }>("/auth/logout-all"),
+    me: <T = AuthUser>() => get<T>("/auth/me"),
+    updateProfile: <T = AuthUser>(body: UpdateProfileInput) => patch<T>("/auth/profile", body),
+    uploadAvatar: <T = AuthUser>(body: FormData) => postForm<T>("/auth/profile/avatar", body),
+    changePassword: (body: { currentPassword: string; newPassword: string }) => post<{ message?: string }>("/auth/change-password", body)
   },
 
   dashboards: {
-    me: <T = unknown>() => get<T>("/api/dashboard/me"),
-    admin: <T = unknown>() => get<T>("/api/dashboard/admin"),
-    projectManager: <T = unknown>() => get<T>("/api/dashboard/project-manager"),
-    teamLeader: <T = unknown>() => get<T>("/api/dashboard/team-leader"),
-    teamMember: <T = unknown>() => get<T>("/api/dashboard/team-member")
+    me: <T = unknown>() => get<T>("/dashboard/me"),
+    admin: <T = unknown>() => get<T>("/dashboard/admin"),
+    projectManager: <T = unknown>() => get<T>("/dashboard/project-manager"),
+    teamLeader: <T = unknown>() => get<T>("/dashboard/team-leader"),
+    teamMember: <T = unknown>() => get<T>("/dashboard/team-member")
   },
 
   users: {
-    list: <T = unknown[]>() => get<T>("/api/users"),
-    get: <T = unknown>(id: Id) => get<T>(`/api/users/${id}`),
-    create: <T = unknown>(body: CreateUserInput) => post<T>("/api/users", body),
-    update: <T = unknown>(id: Id, body: UpdateUserInput) => patch<T>(`/api/users/${id}`, body),
-    remove: <T = unknown>(id: Id) => del<T>(`/api/users/${id}`),
-    assignRoles: <T = unknown>(id: Id, roleIds: Id[]) => put<T>(`/api/users/${id}/roles`, { roleIds })
+    list: <T = unknown[]>() => get<T>("/users"),
+    get: <T = unknown>(id: Id) => get<T>(`/users/${id}`),
+    create: <T = unknown>(body: CreateUserInput) => post<T>("/users", body),
+    update: <T = unknown>(id: Id, body: UpdateUserInput) => patch<T>(`/users/${id}`, body),
+    remove: <T = unknown>(id: Id) => del<T>(`/users/${id}`),
+    assignRoles: <T = unknown>(id: Id, roleIds: Id[]) => put<T>(`/users/${id}/roles`, { roleIds })
   },
 
   roles: {
-    list: <T = unknown[]>() => get<T>("/api/roles"),
-    create: <T = unknown>(body: CreateRoleInput) => post<T>("/api/roles", body),
-    update: <T = unknown>(id: Id, body: UpdateRoleInput) => patch<T>(`/api/roles/${id}`, body),
-    remove: <T = unknown>(id: Id) => del<T>(`/api/roles/${id}`),
-    assignPermissions: <T = unknown>(id: Id, permissionIds: Id[]) => put<T>(`/api/roles/${id}/permissions`, { permissionIds })
+    list: <T = unknown[]>() => get<T>("/roles"),
+    create: <T = unknown>(body: CreateRoleInput) => post<T>("/roles", body),
+    update: <T = unknown>(id: Id, body: UpdateRoleInput) => patch<T>(`/roles/${id}`, body),
+    remove: <T = unknown>(id: Id) => del<T>(`/roles/${id}`),
+    assignPermissions: <T = unknown>(id: Id, permissionIds: Id[]) => put<T>(`/roles/${id}/permissions`, { permissionIds })
   },
 
   permissions: {
-    list: <T = unknown[]>() => get<T>("/api/permissions")
+    list: <T = unknown[]>() => get<T>("/permissions")
   },
 
   clients: {
-    list: <T = unknown[]>() => get<T>("/api/clients"),
-    get: <T = unknown>(id: Id) => get<T>(`/api/clients/${id}`),
-    create: <T = unknown>(body: ClientInput) => post<T>("/api/clients", body),
-    update: <T = unknown>(id: Id, body: Partial<ClientInput> & { isActive?: boolean }) => patch<T>(`/api/clients/${id}`, body),
-    remove: <T = unknown>(id: Id) => del<T>(`/api/clients/${id}`)
+    list: <T = unknown[]>() => get<T>("/clients"),
+    get: <T = unknown>(id: Id) => get<T>(`/clients/${id}`),
+    create: <T = unknown>(body: ClientInput) => post<T>("/clients", body),
+    update: <T = unknown>(id: Id, body: Partial<ClientInput> & { isActive?: boolean }) => patch<T>(`/clients/${id}`, body),
+    remove: <T = unknown>(id: Id) => del<T>(`/clients/${id}`)
   },
 
   masters: {
     currencies: {
-      list: <T = unknown[]>() => get<T>("/api/masters/currencies"),
-      create: <T = unknown>(body: CurrencyInput) => post<T>("/api/masters/currencies", body),
-      update: <T = unknown>(id: Id, body: Partial<CurrencyInput> & { isActive?: boolean }) => patch<T>(`/api/masters/currencies/${id}`, body),
-      remove: <T = unknown>(id: Id) => del<T>(`/api/masters/currencies/${id}`)
+      list: <T = unknown[]>() => get<T>("/masters/currencies"),
+      create: <T = unknown>(body: CurrencyInput) => post<T>("/masters/currencies", body),
+      update: <T = unknown>(id: Id, body: Partial<CurrencyInput> & { isActive?: boolean }) => patch<T>(`/masters/currencies/${id}`, body),
+      remove: <T = unknown>(id: Id) => del<T>(`/masters/currencies/${id}`)
     },
     technologyStacks: {
-      list: <T = unknown[]>() => get<T>("/api/masters/technology-stacks"),
-      create: <T = unknown>(body: TechnologyStackInput) => post<T>("/api/masters/technology-stacks", body),
-      update: <T = unknown>(id: Id, body: Partial<TechnologyStackInput> & { isActive?: boolean }) => patch<T>(`/api/masters/technology-stacks/${id}`, body),
-      remove: <T = unknown>(id: Id) => del<T>(`/api/masters/technology-stacks/${id}`)
+      list: <T = unknown[]>() => get<T>("/masters/technology-stacks"),
+      create: <T = unknown>(body: TechnologyStackInput) => post<T>("/masters/technology-stacks", body),
+      update: <T = unknown>(id: Id, body: Partial<TechnologyStackInput> & { isActive?: boolean }) => patch<T>(`/masters/technology-stacks/${id}`, body),
+      remove: <T = unknown>(id: Id) => del<T>(`/masters/technology-stacks/${id}`)
     }
   },
 
   projects: {
-    list: <T = unknown[]>() => get<T>("/api/projects"),
-    get: <T = unknown>(projectId: Id) => get<T>(`/api/projects/${projectId}`),
-    create: <T = unknown>(body: CreateProjectInput) => post<T>("/api/projects", body),
-    update: <T = unknown>(projectId: Id, body: UpdateProjectInput) => patch<T>(`/api/projects/${projectId}`, body),
-    remove: <T = unknown>(projectId: Id) => del<T>(`/api/projects/${projectId}`),
-    assignMembers: <T = unknown>(projectId: Id, members: ProjectMemberInput[]) => put<T>(`/api/projects/${projectId}/members`, { members }),
+    list: <T = unknown[]>() => get<T>("/projects"),
+    get: <T = unknown>(projectId: Id) => get<T>(`/projects/${projectId}`),
+    create: <T = unknown>(body: CreateProjectInput) => post<T>("/projects", body),
+    update: <T = unknown>(projectId: Id, body: UpdateProjectInput) => patch<T>(`/projects/${projectId}`, body),
+    remove: <T = unknown>(projectId: Id) => del<T>(`/projects/${projectId}`),
+    assignMembers: <T = unknown>(projectId: Id, members: ProjectMemberInput[]) => put<T>(`/projects/${projectId}/members`, { members }),
 
     attachments: {
-      list: <T = unknown[]>(projectId: Id) => get<T>(`/api/projects/${projectId}/attachments`),
-      create: <T = unknown>(projectId: Id, body: ProjectAttachmentInput) => post<T>(`/api/projects/${projectId}/attachments`, body),
+      list: <T = unknown[]>(projectId: Id) => get<T>(`/projects/${projectId}/attachments`),
+      create: <T = unknown>(projectId: Id, body: ProjectAttachmentInput) => post<T>(`/projects/${projectId}/attachments`, body),
       update: <T = unknown>(projectId: Id, attachmentId: Id, body: Partial<ProjectAttachmentInput>) =>
-        patch<T>(`/api/projects/${projectId}/attachments/${attachmentId}`, body),
-      remove: <T = unknown>(projectId: Id, attachmentId: Id) => del<T>(`/api/projects/${projectId}/attachments/${attachmentId}`)
+        patch<T>(`/projects/${projectId}/attachments/${attachmentId}`, body),
+      remove: <T = unknown>(projectId: Id, attachmentId: Id) => del<T>(`/projects/${projectId}/attachments/${attachmentId}`)
     },
 
     links: {
-      list: <T = unknown[]>(projectId: Id) => get<T>(`/api/projects/${projectId}/links`),
-      create: <T = unknown>(projectId: Id, body: ProjectLinkInput) => post<T>(`/api/projects/${projectId}/links`, body),
-      update: <T = unknown>(projectId: Id, linkId: Id, body: Partial<ProjectLinkInput>) => patch<T>(`/api/projects/${projectId}/links/${linkId}`, body),
-      remove: <T = unknown>(projectId: Id, linkId: Id) => del<T>(`/api/projects/${projectId}/links/${linkId}`)
+      list: <T = unknown[]>(projectId: Id) => get<T>(`/projects/${projectId}/links`),
+      create: <T = unknown>(projectId: Id, body: ProjectLinkInput) => post<T>(`/projects/${projectId}/links`, body),
+      update: <T = unknown>(projectId: Id, linkId: Id, body: Partial<ProjectLinkInput>) => patch<T>(`/projects/${projectId}/links/${linkId}`, body),
+      remove: <T = unknown>(projectId: Id, linkId: Id) => del<T>(`/projects/${projectId}/links/${linkId}`)
     },
 
     credentials: {
-      list: <T = unknown[]>(projectId: Id) => get<T>(`/api/projects/${projectId}/credentials`),
-      reveal: <T = unknown>(projectId: Id, credentialId: Id) => get<T>(`/api/projects/${projectId}/credentials/${credentialId}/reveal`),
-      create: <T = unknown>(projectId: Id, body: ProjectCredentialInput) => post<T>(`/api/projects/${projectId}/credentials`, body),
+      list: <T = unknown[]>(projectId: Id) => get<T>(`/projects/${projectId}/credentials`),
+      reveal: <T = unknown>(projectId: Id, credentialId: Id) => get<T>(`/projects/${projectId}/credentials/${credentialId}/reveal`),
+      create: <T = unknown>(projectId: Id, body: ProjectCredentialInput) => post<T>(`/projects/${projectId}/credentials`, body),
       update: <T = unknown>(projectId: Id, credentialId: Id, body: Partial<ProjectCredentialInput>) =>
-        patch<T>(`/api/projects/${projectId}/credentials/${credentialId}`, body),
-      remove: <T = unknown>(projectId: Id, credentialId: Id) => del<T>(`/api/projects/${projectId}/credentials/${credentialId}`)
+        patch<T>(`/projects/${projectId}/credentials/${credentialId}`, body),
+      remove: <T = unknown>(projectId: Id, credentialId: Id) => del<T>(`/projects/${projectId}/credentials/${credentialId}`)
     },
 
     milestones: {
-      list: <T = unknown[]>(projectId: Id) => get<T>(`/api/projects/${projectId}/milestones`),
-      get: <T = unknown>(projectId: Id, milestoneId: Id) => get<T>(`/api/projects/${projectId}/milestones/${milestoneId}`),
-      create: <T = unknown>(projectId: Id, body: MilestoneInput) => post<T>(`/api/projects/${projectId}/milestones`, body),
+      list: <T = unknown[]>(projectId: Id) => get<T>(`/projects/${projectId}/milestones`),
+      get: <T = unknown>(projectId: Id, milestoneId: Id) => get<T>(`/projects/${projectId}/milestones/${milestoneId}`),
+      create: <T = unknown>(projectId: Id, body: MilestoneInput) => post<T>(`/projects/${projectId}/milestones`, body),
       update: <T = unknown>(projectId: Id, milestoneId: Id, body: Partial<MilestoneInput>) =>
-        patch<T>(`/api/projects/${projectId}/milestones/${milestoneId}`, body),
-      remove: <T = unknown>(projectId: Id, milestoneId: Id) => del<T>(`/api/projects/${projectId}/milestones/${milestoneId}`),
-      markDelayed: <T = unknown>(projectId: Id) => post<T>(`/api/projects/${projectId}/milestones/mark-delayed`)
+        patch<T>(`/projects/${projectId}/milestones/${milestoneId}`, body),
+      remove: <T = unknown>(projectId: Id, milestoneId: Id) => del<T>(`/projects/${projectId}/milestones/${milestoneId}`),
+      markDelayed: <T = unknown>(projectId: Id) => post<T>(`/projects/${projectId}/milestones/mark-delayed`)
     },
 
     sprints: {
-      list: <T = unknown[]>(projectId: Id, milestoneId: Id) => get<T>(`/api/projects/${projectId}/milestones/${milestoneId}/sprints`),
+      list: <T = unknown[]>(projectId: Id, milestoneId: Id) => get<T>(`/projects/${projectId}/milestones/${milestoneId}/sprints`),
       get: <T = unknown>(projectId: Id, milestoneId: Id, sprintId: Id) =>
-        get<T>(`/api/projects/${projectId}/milestones/${milestoneId}/sprints/${sprintId}`),
-      create: <T = unknown>(projectId: Id, milestoneId: Id, body: SprintInput) => post<T>(`/api/projects/${projectId}/milestones/${milestoneId}/sprints`, body),
+        get<T>(`/projects/${projectId}/milestones/${milestoneId}/sprints/${sprintId}`),
+      create: <T = unknown>(projectId: Id, milestoneId: Id, body: SprintInput) => post<T>(`/projects/${projectId}/milestones/${milestoneId}/sprints`, body),
       update: <T = unknown>(projectId: Id, milestoneId: Id, sprintId: Id, body: Partial<SprintInput>) =>
-        patch<T>(`/api/projects/${projectId}/milestones/${milestoneId}/sprints/${sprintId}`, body),
+        patch<T>(`/projects/${projectId}/milestones/${milestoneId}/sprints/${sprintId}`, body),
       remove: <T = unknown>(projectId: Id, milestoneId: Id, sprintId: Id) =>
-        del<T>(`/api/projects/${projectId}/milestones/${milestoneId}/sprints/${sprintId}`),
+        del<T>(`/projects/${projectId}/milestones/${milestoneId}/sprints/${sprintId}`),
       health: <T = unknown>(projectId: Id, milestoneId: Id, sprintId: Id) =>
-        get<T>(`/api/projects/${projectId}/milestones/${milestoneId}/sprints/${sprintId}/health`)
+        get<T>(`/projects/${projectId}/milestones/${milestoneId}/sprints/${sprintId}/health`)
     },
 
     tasks: {
-      list: <T = unknown[]>(projectId: Id) => get<T>(`/api/projects/${projectId}/tasks`),
-      get: <T = unknown>(projectId: Id, taskId: Id) => get<T>(`/api/projects/${projectId}/tasks/${taskId}`),
-      create: <T = unknown>(projectId: Id, body: TaskInput) => post<T>(`/api/projects/${projectId}/tasks`, body),
-      update: <T = unknown>(projectId: Id, taskId: Id, body: Partial<TaskInput>) => patch<T>(`/api/projects/${projectId}/tasks/${taskId}`, body),
-      remove: <T = unknown>(projectId: Id, taskId: Id) => del<T>(`/api/projects/${projectId}/tasks/${taskId}`),
+      list: <T = unknown[]>(projectId: Id) => get<T>(`/projects/${projectId}/tasks`),
+      get: <T = unknown>(projectId: Id, taskId: Id) => get<T>(`/projects/${projectId}/tasks/${taskId}`),
+      create: <T = unknown>(projectId: Id, body: TaskInput) => post<T>(`/projects/${projectId}/tasks`, body),
+      update: <T = unknown>(projectId: Id, taskId: Id, body: Partial<TaskInput>) => patch<T>(`/projects/${projectId}/tasks/${taskId}`, body),
+      remove: <T = unknown>(projectId: Id, taskId: Id) => del<T>(`/projects/${projectId}/tasks/${taskId}`),
       comments: {
-        list: <T = unknown[]>(projectId: Id, taskId: Id) => get<T>(`/api/projects/${projectId}/tasks/${taskId}/comments`),
+        list: <T = unknown[]>(projectId: Id, taskId: Id) => get<T>(`/projects/${projectId}/tasks/${taskId}/comments`),
         create: <T = unknown>(projectId: Id, taskId: Id, body: { comment: string; mentions?: Id[] }) =>
-          post<T>(`/api/projects/${projectId}/tasks/${taskId}/comments`, { mentions: [], ...body })
+          post<T>(`/projects/${projectId}/tasks/${taskId}/comments`, { mentions: [], ...body })
       },
       blockers: {
-        create: <T = unknown>(projectId: Id, taskId: Id, body: { description: string }) => post<T>(`/api/projects/${projectId}/tasks/${taskId}/blockers`, body),
+        create: <T = unknown>(projectId: Id, taskId: Id, body: { description: string }) => post<T>(`/projects/${projectId}/tasks/${taskId}/blockers`, body),
         update: <T = unknown>(projectId: Id, taskId: Id, blockerId: Id, body: { isResolved: boolean }) =>
-          patch<T>(`/api/projects/${projectId}/tasks/${taskId}/blockers/${blockerId}`, body)
+          patch<T>(`/projects/${projectId}/tasks/${taskId}/blockers/${blockerId}`, body)
       },
       attachments: {
-        list: <T = unknown[]>(projectId: Id, taskId: Id) => get<T>(`/api/projects/${projectId}/tasks/${taskId}/attachments`),
+        list: <T = unknown[]>(projectId: Id, taskId: Id) => get<T>(`/projects/${projectId}/tasks/${taskId}/attachments`),
         create: <T = unknown>(projectId: Id, taskId: Id, body: Omit<ProjectAttachmentInput, "description">) =>
-          post<T>(`/api/projects/${projectId}/tasks/${taskId}/attachments`, body)
+          post<T>(`/projects/${projectId}/tasks/${taskId}/attachments`, body)
       },
       updates: {
-        create: <T = unknown>(projectId: Id, taskId: Id, body: TaskUpdateInput) => post<T>(`/api/projects/${projectId}/tasks/${taskId}/updates`, body)
+        create: <T = unknown>(projectId: Id, taskId: Id, body: TaskUpdateInput) => post<T>(`/projects/${projectId}/tasks/${taskId}/updates`, body)
       },
       timeLogs: {
-        list: <T = unknown[]>(projectId: Id, taskId: Id) => get<T>(`/api/projects/${projectId}/tasks/${taskId}/time-logs`),
-        create: <T = unknown>(projectId: Id, taskId: Id, body: TimeLogInput) => post<T>(`/api/projects/${projectId}/tasks/${taskId}/time-logs`, body)
+        list: <T = unknown[]>(projectId: Id, taskId: Id) => get<T>(`/projects/${projectId}/tasks/${taskId}/time-logs`),
+        create: <T = unknown>(projectId: Id, taskId: Id, body: TimeLogInput) => post<T>(`/projects/${projectId}/tasks/${taskId}/time-logs`, body)
       },
       timer: {
-        active: <T = unknown | null>(projectId: Id, taskId: Id) => get<T>(`/api/projects/${projectId}/tasks/${taskId}/timer/active`),
-        start: <T = unknown>(projectId: Id, taskId: Id, body?: TaskTimerInput) => post<T>(`/api/projects/${projectId}/tasks/${taskId}/timer/start`, body),
-        stop: <T = unknown>(projectId: Id, taskId: Id, body?: TaskTimerInput) => post<T>(`/api/projects/${projectId}/tasks/${taskId}/timer/stop`, body)
+        active: <T = unknown | null>(projectId: Id, taskId: Id) => get<T>(`/projects/${projectId}/tasks/${taskId}/timer/active`),
+        start: <T = unknown>(projectId: Id, taskId: Id, body?: TaskTimerInput) => post<T>(`/projects/${projectId}/tasks/${taskId}/timer/start`, body),
+        stop: <T = unknown>(projectId: Id, taskId: Id, body?: TaskTimerInput) => post<T>(`/projects/${projectId}/tasks/${taskId}/timer/stop`, body)
       }
     },
 
-    taskUpdates: <T = unknown[]>(projectId: Id, query?: { reportDate?: string }) => get<T>(`/api/projects/${projectId}/task-updates`, query),
+    taskUpdates: <T = unknown[]>(projectId: Id, query?: { reportDate?: string }) => get<T>(`/projects/${projectId}/task-updates`, query),
     generateDailyReports: <T = unknown>(projectId: Id, query?: { reportDate?: string }) =>
-      apiRequest<T>(`/api/projects/${projectId}/daily-reports/generate${buildQuery(query)}`, { method: "POST", body: JSON.stringify({}) }),
-    dailyReports: <T = unknown[]>(projectId: Id, query?: { reportDate?: string }) => get<T>(`/api/projects/${projectId}/daily-reports`, query),
-    dailySummary: <T = unknown>(projectId: Id, query?: { reportDate?: string }) => get<T>(`/api/projects/${projectId}/daily-summary`, query),
-    timeLogs: <T = unknown[]>(projectId: Id) => get<T>(`/api/projects/${projectId}/time-logs`),
-    costing: <T = unknown>(projectId: Id) => get<T>(`/api/projects/${projectId}/costing`)
+      apiRequest<T>(`/projects/${projectId}/daily-reports/generate${buildQuery(query)}`, { method: "POST", body: JSON.stringify({}) }),
+    dailyReports: <T = unknown[]>(projectId: Id, query?: { reportDate?: string }) => get<T>(`/projects/${projectId}/daily-reports`, query),
+    dailySummary: <T = unknown>(projectId: Id, query?: { reportDate?: string }) => get<T>(`/projects/${projectId}/daily-summary`, query),
+    timeLogs: <T = unknown[]>(projectId: Id) => get<T>(`/projects/${projectId}/time-logs`),
+    costing: <T = unknown>(projectId: Id) => get<T>(`/projects/${projectId}/costing`)
   },
 
   reports: {
-    projects: <T = unknown>(query?: ReportFilters) => get<T>("/api/reports/projects", query),
-    developers: <T = unknown>(query?: ReportFilters) => get<T>("/api/reports/developers", query),
-    team: <T = unknown>(query?: ReportFilters) => get<T>("/api/reports/team", query),
-    costing: <T = unknown>(query?: ReportFilters) => get<T>("/api/reports/costing", query),
-    estimatedVsActual: <T = unknown>(query?: ReportFilters) => get<T>("/api/reports/estimated-vs-actual", query),
-    budgetOverruns: <T = unknown>(query?: ReportFilters) => get<T>("/api/reports/budget-overruns", query)
+    projects: <T = unknown>(query?: ReportFilters) => get<T>("/reports/projects", query),
+    developers: <T = unknown>(query?: ReportFilters) => get<T>("/reports/developers", query),
+    team: <T = unknown>(query?: ReportFilters) => get<T>("/reports/team", query),
+    costing: <T = unknown>(query?: ReportFilters) => get<T>("/reports/costing", query),
+    estimatedVsActual: <T = unknown>(query?: ReportFilters) => get<T>("/reports/estimated-vs-actual", query),
+    budgetOverruns: <T = unknown>(query?: ReportFilters) => get<T>("/reports/budget-overruns", query)
   },
 
   notifications: {
-    listMine: <T = unknown[]>() => get<T>("/api/notifications"),
-    markRead: <T = unknown>(id: Id) => patch<T>(`/api/notifications/${id}/read`),
-    markAllRead: <T = unknown>() => patch<T>("/api/notifications/read-all"),
+    listMine: <T = unknown[]>() => get<T>("/notifications"),
+    markRead: <T = unknown>(id: Id) => patch<T>(`/notifications/${id}/read`),
+    markAllRead: <T = unknown>() => patch<T>("/notifications/read-all"),
     preferences: {
-      list: <T = unknown[]>() => get<T>("/api/notifications/preferences"),
-      update: <T = unknown>(preferences: NotificationPreferenceInput[]) => put<T>("/api/notifications/preferences", { preferences })
+      list: <T = unknown[]>() => get<T>("/notifications/preferences"),
+      update: <T = unknown>(preferences: NotificationPreferenceInput[]) => put<T>("/notifications/preferences", { preferences })
     },
     domainEvents: {
-      create: <T = unknown>(body: DomainNotificationInput) => post<T>("/api/notifications/domain-events", body)
+      create: <T = unknown>(body: DomainNotificationInput) => post<T>("/notifications/domain-events", body)
     },
     templates: {
-      list: <T = unknown[]>() => get<T>("/api/notifications/templates"),
-      create: <T = unknown>(body: NotificationTemplateInput) => post<T>("/api/notifications/templates", body),
-      update: <T = unknown>(id: Id, body: Partial<NotificationTemplateInput>) => patch<T>(`/api/notifications/templates/${id}`, body)
+      list: <T = unknown[]>() => get<T>("/notifications/templates"),
+      create: <T = unknown>(body: NotificationTemplateInput) => post<T>("/notifications/templates", body),
+      update: <T = unknown>(id: Id, body: Partial<NotificationTemplateInput>) => patch<T>(`/notifications/templates/${id}`, body)
     },
-    emailLogs: <T = unknown[]>() => get<T>("/api/notifications/email-logs")
+    emailLogs: <T = unknown[]>() => get<T>("/notifications/email-logs")
   },
 
   chat: {
-    users: <T = ChatUser[]>() => get<T>("/api/chat/users"),
-    threads: <T = ChatThread[]>() => get<T>("/api/chat/threads"),
-    createDirect: <T = ChatThread>(participantId: Id) => post<T>("/api/chat/direct", { participantId }),
-    createGroup: <T = ChatThread>(body: { name: string; participantIds: Id[] }) => post<T>("/api/chat/groups", body),
-    messages: <T = ChatMessage[]>(threadId: Id) => get<T>(`/api/chat/threads/${threadId}/messages`),
-    sendMessage: <T = ChatMessage>(threadId: Id, body: { body: string }) => post<T>(`/api/chat/threads/${threadId}/messages`, body)
+    users: <T = ChatUser[]>() => get<T>("/chat/users"),
+    threads: <T = ChatThread[]>() => get<T>("/chat/threads"),
+    createDirect: <T = ChatThread>(participantId: Id) => post<T>("/chat/direct", { participantId }),
+    createGroup: <T = ChatThread>(body: { name: string; participantIds: Id[] }) => post<T>("/chat/groups", body),
+    messages: <T = ChatMessage[]>(threadId: Id) => get<T>(`/chat/threads/${threadId}/messages`),
+    sendMessage: <T = ChatMessage>(threadId: Id, body: { body: string }) => post<T>(`/chat/threads/${threadId}/messages`, body)
   },
 
   calendar: {
     events: {
-      list: <T = unknown[]>(query?: CalendarFilters) => get<T>("/api/calendar/events", query),
-      create: <T = unknown>(body: CalendarEventInput) => post<T>("/api/calendar/events", body),
-      update: <T = unknown>(id: Id, body: Partial<CalendarEventInput> & { isActive?: boolean }) => patch<T>(`/api/calendar/events/${id}`, body),
-      remove: <T = unknown>(id: Id) => del<T>(`/api/calendar/events/${id}`)
+      list: <T = unknown[]>(query?: CalendarFilters) => get<T>("/calendar/events", query),
+      create: <T = unknown>(body: CalendarEventInput) => post<T>("/calendar/events", body),
+      update: <T = unknown>(id: Id, body: Partial<CalendarEventInput> & { isActive?: boolean }) => patch<T>(`/calendar/events/${id}`, body),
+      remove: <T = unknown>(id: Id) => del<T>(`/calendar/events/${id}`)
     },
     leaves: {
-      list: <T = unknown[]>(query?: CalendarFilters) => get<T>("/api/calendar/leaves", query),
-      create: <T = unknown>(body: DeveloperLeaveInput) => post<T>("/api/calendar/leaves", body),
-      update: <T = unknown>(id: Id, body: Partial<DeveloperLeaveInput> & { isActive?: boolean }) => patch<T>(`/api/calendar/leaves/${id}`, body),
-      remove: <T = unknown>(id: Id) => del<T>(`/api/calendar/leaves/${id}`)
+      list: <T = unknown[]>(query?: CalendarFilters) => get<T>("/calendar/leaves", query),
+      create: <T = unknown>(body: DeveloperLeaveInput) => post<T>("/calendar/leaves", body),
+      update: <T = unknown>(id: Id, body: Partial<DeveloperLeaveInput> & { isActive?: boolean }) => patch<T>(`/calendar/leaves/${id}`, body),
+      remove: <T = unknown>(id: Id) => del<T>(`/calendar/leaves/${id}`)
     },
     holidays: {
-      list: <T = unknown[]>(query?: CalendarFilters) => get<T>("/api/calendar/holidays", query),
-      create: <T = unknown>(body: HolidayInput) => post<T>("/api/calendar/holidays", body),
-      update: <T = unknown>(id: Id, body: Partial<HolidayInput> & { isActive?: boolean }) => patch<T>(`/api/calendar/holidays/${id}`, body),
-      remove: <T = unknown>(id: Id) => del<T>(`/api/calendar/holidays/${id}`)
+      list: <T = unknown[]>(query?: CalendarFilters) => get<T>("/calendar/holidays", query),
+      create: <T = unknown>(body: HolidayInput) => post<T>("/calendar/holidays", body),
+      update: <T = unknown>(id: Id, body: Partial<HolidayInput> & { isActive?: boolean }) => patch<T>(`/calendar/holidays/${id}`, body),
+      remove: <T = unknown>(id: Id) => del<T>(`/calendar/holidays/${id}`)
     },
-    availability: <T = unknown[]>(query?: CalendarFilters) => get<T>("/api/calendar/availability", query),
-    workload: <T = unknown[]>(query?: CalendarFilters) => get<T>("/api/calendar/workload", query)
+    availability: <T = unknown[]>(query?: CalendarFilters) => get<T>("/calendar/availability", query),
+    workload: <T = unknown[]>(query?: CalendarFilters) => get<T>("/calendar/workload", query)
   },
 
   jobs: {
-    runs: <T = unknown[]>() => get<T>("/api/jobs/runs"),
-    run: <T = unknown>(body?: { jobName?: JobName; date?: string }) => post<T>("/api/jobs/run", body)
+    runs: <T = unknown[]>() => get<T>("/jobs/runs"),
+    run: <T = unknown>(body?: { jobName?: JobName; date?: string }) => post<T>("/jobs/run", body)
   },
 
   activityLogs: {
-    list: <T = unknown>(query?: ActivityLogFilters) => get<T>("/api/activity-logs", query),
-    get: <T = unknown>(id: Id) => get<T>(`/api/activity-logs/${id}`)
+    list: <T = unknown>(query?: ActivityLogFilters) => get<T>("/activity-logs", query),
+    get: <T = unknown>(id: Id) => get<T>(`/activity-logs/${id}`)
   }
 };
 

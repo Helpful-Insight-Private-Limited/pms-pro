@@ -32,12 +32,12 @@ Build project, developer, team, and costing reports.
 
 ## API Endpoints
 
-- `GET /api/reports/projects`
-- `GET /api/reports/developers`
-- `GET /api/reports/team`
-- `GET /api/reports/costing`
-- `GET /api/reports/estimated-vs-actual`
-- `GET /api/reports/budget-overruns`
+- `GET /reports/projects`
+- `GET /reports/developers`
+- `GET /reports/team`
+- `GET /reports/costing`
+- `GET /reports/estimated-vs-actual`
+- `GET /reports/budget-overruns`
 
 ## Supported Filters
 
