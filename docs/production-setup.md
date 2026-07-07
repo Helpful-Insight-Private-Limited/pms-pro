@@ -59,6 +59,22 @@ Install dependencies:
 npm ci
 ```
 
+The backend uses Node's built-in `crypto.scrypt` for password hashing, so production install does not require compiling native password modules such as `argon2`. If your server previously failed while building `node_modules/argon2`, pull the latest code and run a clean install:
+
+```bash
+rm -rf node_modules package-lock.json
+git checkout -- package-lock.json
+npm ci
+```
+
+If you cannot remove files on shared hosting, delete `node_modules/argon2` from the hosting file manager and run `npm ci` again after pulling the latest code.
+
+If this server already had users created with the old native `argon2` password hashes, reset those passwords after the backend build:
+
+```bash
+USER_EMAIL=admin@example.com NEW_PASSWORD='ChangeMeStrong123' npm --workspace backend run user:reset-password
+```
+
 ## 3. Create The Database
 
 Open MySQL:

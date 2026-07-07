@@ -1,6 +1,6 @@
-import argon2 from "argon2";
 import { prisma } from "../src/prisma/client.js";
 import { encryptSecret } from "../src/utils/encryption.js";
+import { hashPassword } from "../src/utils/password.js";
 
 const roles = [
   { name: "Admin", slug: "admin", isSystem: true },
@@ -452,7 +452,7 @@ async function seedAdminUser() {
         firstName,
         lastName,
         email,
-        passwordHash: await argon2.hash(password),
+        passwordHash: await hashPassword(password),
         status: "ACTIVE",
         isActive: true
       }
@@ -502,7 +502,7 @@ async function seedDemoUser(input: {
       lastName: input.lastName,
       email: input.email,
       phone: input.phone,
-      passwordHash: await argon2.hash(demoPassword),
+      passwordHash: await hashPassword(demoPassword),
       status: "ACTIVE",
       isActive: true
     }
