@@ -22,7 +22,12 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const targetUrl = new URL(event.notification.data?.url || "/dashboard", self.location.origin).href;
+  const notificationUrl = new URL(event.notification.data?.url || "/dashboard", self.location.origin);
+  if (notificationUrl.hostname === "localhost" || notificationUrl.hostname === "127.0.0.1") {
+    notificationUrl.protocol = self.location.protocol;
+    notificationUrl.host = self.location.host;
+  }
+  const targetUrl = notificationUrl.href;
 
   event.waitUntil((async () => {
     const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });

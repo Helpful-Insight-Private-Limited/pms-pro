@@ -43,13 +43,13 @@ function notificationUrl(payload: PushPayload) {
   const metadata = payload.metadata && typeof payload.metadata === "object" ? payload.metadata as Record<string, unknown> : {};
 
   if (payload.type === "CHAT_MESSAGE" && typeof metadata.threadId === "string") {
-    return `${env.publicAppUrl}/dashboard?chatThreadId=${encodeURIComponent(metadata.threadId)}`;
+    return `/dashboard?chatThreadId=${encodeURIComponent(metadata.threadId)}`;
   }
 
-  if (payload.entityType === "TASK" && payload.entityId) return `${env.publicAppUrl}/work`;
-  if (payload.entityType === "PROJECT" && payload.entityId) return `${env.publicAppUrl}/projects`;
+  if (payload.entityType === "TASK" && payload.entityId) return "/work";
+  if (payload.entityType === "PROJECT" && payload.entityId) return "/projects";
 
-  return `${env.publicAppUrl}/dashboard`;
+  return "/dashboard";
 }
 
 async function deactivateSubscription(endpoint: string) {

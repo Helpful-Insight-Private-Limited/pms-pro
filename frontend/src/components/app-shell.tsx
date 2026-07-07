@@ -118,18 +118,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }
       }
 
-      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted" && document.visibilityState !== "visible") {
-        const browserNotification = new Notification(notification.title, {
-          body: notification.message,
-          tag: notification.id
-        });
-        browserNotification.onclick = () => {
-          window.focus();
-          if (notification.type === "CHAT_MESSAGE") {
-            openChat(notification.metadata?.threadId ?? null);
-          }
-        };
-      }
+      // Browser/system notifications are delivered by Web Push through the service worker.
+      // The socket event only keeps the in-app notification panel in sync.
     }
 
     socket.on("notification.created", onNotification);
