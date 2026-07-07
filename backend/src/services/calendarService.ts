@@ -198,12 +198,11 @@ async function leaveHierarchy(developerId: string) {
 
   if (developerIsTl) {
     const projectManagerId = projectAsLeader?.projectManagerId ?? projectAsMember?.projectManagerId ?? null;
-    if (!projectManagerId) throw new ApiError(400, "LEAVE_APPROVER_NOT_FOUND", "No project manager is assigned for this team leader");
     return {
       role: "teamLeader",
       teamLeaderRequired: false,
-      projectManagerRequired: true,
-      adminRequired: false,
+      projectManagerRequired: Boolean(projectManagerId),
+      adminRequired: !projectManagerId,
       teamLeaderId: null,
       projectManagerId
     };
@@ -211,13 +210,12 @@ async function leaveHierarchy(developerId: string) {
 
   const teamLeaderId = projectAsMember?.teamLeaderId ?? null;
   const projectManagerId = projectAsMember?.projectManagerId ?? null;
-  if (!teamLeaderId || !projectManagerId) throw new ApiError(400, "LEAVE_APPROVER_NOT_FOUND", "Team member leave requires assigned team leader and project manager");
 
   return {
     role: "teamMember",
-    teamLeaderRequired: true,
-    projectManagerRequired: true,
-    adminRequired: false,
+    teamLeaderRequired: Boolean(teamLeaderId),
+    projectManagerRequired: Boolean(projectManagerId),
+    adminRequired: !teamLeaderId || !projectManagerId,
     teamLeaderId,
     projectManagerId
   };

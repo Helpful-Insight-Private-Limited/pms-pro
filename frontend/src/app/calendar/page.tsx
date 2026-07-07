@@ -646,12 +646,14 @@ function DataShell({ title, subtitle, children }: { title: string; subtitle: str
 }
 
 function RowActions({ onEdit, onDelete, disabled = false }: { onEdit: () => void; onDelete: () => void; disabled?: boolean }) {
+  if (disabled) return null;
+
   return (
     <div className="flex justify-end gap-2">
-      <button disabled={disabled} onClick={onEdit} className="grid h-9 w-9 place-items-center rounded-md border border-[#d7dde8] text-[#2563eb] disabled:opacity-40" aria-label="Edit">
+      <button onClick={onEdit} className="grid h-9 w-9 place-items-center rounded-md border border-[#d7dde8] text-[#2563eb]" aria-label="Edit">
         <Edit3 className="h-4 w-4" />
       </button>
-      <button disabled={disabled} onClick={onDelete} className="grid h-9 w-9 place-items-center rounded-md border border-[#f3b4b4] text-[#b42318] disabled:opacity-40" aria-label="Delete">
+      <button onClick={onDelete} className="grid h-9 w-9 place-items-center rounded-md border border-[#f3b4b4] text-[#b42318]" aria-label="Delete">
         <Trash2 className="h-4 w-4" />
       </button>
     </div>

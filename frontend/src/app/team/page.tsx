@@ -325,12 +325,12 @@ export default function TeamPage() {
                   <td className="border-b border-[#edf1f7] px-4 py-4"><StatusBadge value={user.status} /></td>
                   <td className="border-b border-[#edf1f7] px-4 py-4">
                     <div className="flex justify-end gap-2">
-                      <button disabled={!canUpdateUser} onClick={() => openEdit(user)} className="grid h-9 w-9 place-items-center rounded-md border border-[#d7dde8] text-[#2563eb] disabled:opacity-40" aria-label="Edit user">
+                      {canUpdateUser ? <button onClick={() => openEdit(user)} className="grid h-9 w-9 place-items-center rounded-md border border-[#d7dde8] text-[#2563eb]" aria-label="Edit user">
                         <Edit3 className="h-4 w-4" />
-                      </button>
-                      <button disabled={!canDeleteUser} onClick={() => deleteUser(user)} className="grid h-9 w-9 place-items-center rounded-md border border-[#f3b4b4] text-[#b42318] disabled:opacity-40" aria-label="Delete user">
+                      </button> : null}
+                      {canDeleteUser ? <button onClick={() => deleteUser(user)} className="grid h-9 w-9 place-items-center rounded-md border border-[#f3b4b4] text-[#b42318]" aria-label="Delete user">
                         <Trash2 className="h-4 w-4" />
-                      </button>
+                      </button> : null}
                     </div>
                   </td>
                 </tr>

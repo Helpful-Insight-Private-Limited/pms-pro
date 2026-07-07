@@ -75,7 +75,7 @@ export const userService = {
   }) {
     const existingUser = await userRepository.findByEmail(input.email);
 
-    if (existingUser) {
+    if (existingUser && !existingUser.deletedAt) {
       throw new ApiError(409, "EMAIL_ALREADY_EXISTS", "Email already exists");
     }
 
@@ -92,23 +92,53 @@ export const userService = {
     }
 
     return prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          firstName: input.firstName,
-          lastName: input.lastName,
-          email: input.email,
-          passwordHash: await hashPassword(input.password),
-          phone: input.phone
-        }
+      const user = existingUser
+        ? await tx.user.update({
+          where: { id: existingUser.id },
+          data: {
+            firstName: input.firstName,
+            lastName: input.lastName,
+            email: input.email,
+            passwordHash: await hashPassword(input.password),
+            phone: input.phone,
+            status: "ACTIVE",
+            isActive: true,
+            deletedAt: null
+          }
+        })
+        : await tx.user.create({
+          data: {
+            firstName: input.firstName,
+            lastName: input.lastName,
+            email: input.email,
+            passwordHash: await hashPassword(input.password),
+            phone: input.phone
+          }
+        });
+
+      await tx.userRole.updateMany({
+        where: { userId: user.id, isActive: true },
+        data: { isActive: false, revokedAt: new Date() }
       });
 
-      await tx.userRole.createMany({
-        data: input.roleIds.map((roleId) => ({
-          userId: user.id,
-          roleId
-        })),
-        skipDuplicates: true
-      });
+      for (const roleId of input.roleIds) {
+        await tx.userRole.upsert({
+          where: {
+            userId_roleId: {
+              userId: user.id,
+              roleId
+            }
+          },
+          update: {
+            isActive: true,
+            revokedAt: null
+          },
+          create: {
+            userId: user.id,
+            roleId
+          }
+        });
+      }
 
       return tx.user.findUniqueOrThrow({
         where: { id: user.id },

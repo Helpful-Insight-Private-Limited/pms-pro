@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Edit3, Flag, MessageSquare, Play, Plus, RefreshCcw, Save, Send, Square, Trash2, X } from "lucide-react";
+import { DragEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, CalendarDays, Clock3, Edit3, MessageSquare, Paperclip, Play, Plus, RefreshCcw, Save, Send, Square, Tag, Trash2, X } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
@@ -26,6 +26,7 @@ type User = {
   firstName: string;
   lastName?: string | null;
   email: string;
+  avatarUrl?: string | null;
 };
 
 type Project = {
@@ -86,8 +87,14 @@ type Task = {
   progressPercentage: string | number;
   startDate?: string | null;
   dueDate?: string | null;
+  completedDate?: string | null;
   labels?: unknown;
   blockers?: Array<{ id: Id; description: string; isResolved: boolean }>;
+  _count?: {
+    attachments?: number;
+    comments?: number;
+    timeLogs?: number;
+  };
 };
 
 type TaskComment = {
@@ -103,12 +110,32 @@ type TaskTimer = {
   description?: string | null;
 };
 
+type TaskAttachment = {
+  id: Id;
+  originalName: string;
+  publicUrl?: string | null;
+  storagePath: string;
+  fileSize: string | number;
+  mimeType: string;
+  createdAt: string;
+};
+
 type ShareTarget =
   | { kind: "milestone"; item: Milestone }
   | { kind: "sprint"; item: Sprint }
   | { kind: "task"; item: Task };
 
 type Tab = "milestones" | "sprints" | "tasks";
+
+const taskColumns: Array<{ status: TaskStatus; label: string; accent: string }> = [
+  { status: "TODO", label: "To do", accent: "bg-[#e4e7ec]" },
+  { status: "IN_PROGRESS", label: "In progress", accent: "bg-[#2563eb]" },
+  { status: "REVIEW", label: "Review", accent: "bg-[#7c3aed]" },
+  { status: "TESTING", label: "Testing", accent: "bg-[#0ea5e9]" },
+  { status: "BLOCKED", label: "Blocked", accent: "bg-[#dc2626]" },
+  { status: "HOLD", label: "On hold", accent: "bg-[#f59e0b]" },
+  { status: "COMPLETED", label: "Done", accent: "bg-[#16a34a]" }
+];
 
 const emptyMilestone = {
   title: "",
@@ -157,6 +184,13 @@ function userName(user?: User | null) {
   return `${user.firstName} ${user.lastName ?? ""}`.trim() || user.email;
 }
 
+function userInitials(user?: User | null) {
+  if (!user) return "NA";
+  const nameParts = [user.firstName, user.lastName].filter(Boolean);
+  if (nameParts.length) return nameParts.map((part) => part![0]).join("").slice(0, 2).toUpperCase();
+  return user.email.slice(0, 2).toUpperCase();
+}
+
 function dateInput(value?: string | null) {
   return value ? value.slice(0, 10) : "";
 }
@@ -168,6 +202,34 @@ function nullableDate(value: string) {
 function nullableText(value: string) {
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
+}
+
+function parseLabels(labels: unknown) {
+  if (Array.isArray(labels)) return labels.map(String).filter(Boolean);
+  if (typeof labels === "string") return labels.split(",").map((label) => label.trim()).filter(Boolean);
+  return [];
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("en", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
+}
+
+function isTaskOverdue(task: Task) {
+  if (!task.dueDate || ["COMPLETED", "HOLD"].includes(task.status)) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(task.dueDate) < today;
+}
+
+function priorityClasses(priority: TaskPriority) {
+  const classes: Record<TaskPriority, string> = {
+    LOW: "border-l-[#16a34a] bg-[#f0fdf4] text-[#166534]",
+    MEDIUM: "border-l-[#f4c430] bg-[#fffbeb] text-[#92400e]",
+    HIGH: "border-l-[#f97316] bg-[#fff7ed] text-[#9a3412]",
+    CRITICAL: "border-l-[#dc2626] bg-[#fef2f2] text-[#991b1b]"
+  };
+  return classes[priority];
 }
 
 function projectUsers(project?: Project | null) {
@@ -198,13 +260,17 @@ export default function WorkPage() {
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskDetail, setTaskDetail] = useState<Task | null>(null);
   const [taskComments, setTaskComments] = useState<TaskComment[]>([]);
+  const [taskAttachments, setTaskAttachments] = useState<TaskAttachment[]>([]);
   const [activeTimers, setActiveTimers] = useState<Record<Id, TaskTimer | null>>({});
+  const [draggedTaskId, setDraggedTaskId] = useState<Id | null>(null);
+  const [dropStatus, setDropStatus] = useState<TaskStatus | null>(null);
   const [shareTarget, setShareTarget] = useState<ShareTarget | null>(null);
   const [chatThreads, setChatThreads] = useState<ChatThread[]>([]);
   const [shareThreadId, setShareThreadId] = useState("");
   const [shareMessage, setShareMessage] = useState("");
   const [comment, setComment] = useState("");
   const [blocker, setBlocker] = useState("");
+  const [attachmentForm, setAttachmentForm] = useState({ originalName: "", publicUrl: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -438,9 +504,14 @@ export default function WorkPage() {
     setTaskDetail(task);
     setComment("");
     setBlocker("");
+    setAttachmentForm({ originalName: "", publicUrl: "" });
     if (!projectId) return;
-    const comments = await api.projects.tasks.comments.list<TaskComment[]>(projectId, task.id).catch(() => []);
+    const [comments, attachments] = await Promise.all([
+      api.projects.tasks.comments.list<TaskComment[]>(projectId, task.id).catch(() => []),
+      api.projects.tasks.attachments.list<TaskAttachment[]>(projectId, task.id).catch(() => [])
+    ]);
     setTaskComments(comments);
+    setTaskAttachments(attachments);
   }
 
   async function addComment() {
@@ -448,6 +519,7 @@ export default function WorkPage() {
     await api.projects.tasks.comments.create(projectId, taskDetail.id, { comment });
     setComment("");
     await openTaskDetail(taskDetail);
+    await loadWork();
   }
 
   async function addBlocker() {
@@ -458,6 +530,58 @@ export default function WorkPage() {
     await loadWork();
     const refreshed = await api.projects.tasks.get<Task>(projectId, taskDetail.id);
     await openTaskDetail(refreshed);
+  }
+
+  async function addAttachment() {
+    if (!projectId || !taskDetail || !attachmentForm.originalName.trim() || !attachmentForm.publicUrl.trim()) return;
+    const fileName = attachmentForm.originalName.trim();
+    const publicUrl = attachmentForm.publicUrl.trim();
+    await api.projects.tasks.attachments.create(projectId, taskDetail.id, {
+      fileName,
+      originalName: fileName,
+      mimeType: "text/uri-list",
+      fileSize: 0,
+      storagePath: publicUrl,
+      publicUrl
+    });
+    setAttachmentForm({ originalName: "", publicUrl: "" });
+    setNotice("Attachment added.");
+    await openTaskDetail(taskDetail);
+    await loadWork();
+  }
+
+  async function moveTask(taskId: Id, status: TaskStatus) {
+    const task = tasks.find((item) => item.id === taskId);
+    if (!projectId || !task || task.status === status || !can("task.update")) {
+      setDraggedTaskId(null);
+      setDropStatus(null);
+      return;
+    }
+
+    const previousTasks = tasks;
+    setTasks((current) => current.map((item) => item.id === taskId ? {
+      ...item,
+      status,
+      progressPercentage: status === "COMPLETED" ? 100 : item.progressPercentage,
+      completedDate: status === "COMPLETED" ? new Date().toISOString() : item.completedDate
+    } : item));
+    try {
+      await api.projects.tasks.update(projectId, taskId, { status });
+      setNotice(`${task.title} moved to ${status.replaceAll("_", " ").toLowerCase()}.`);
+      await loadWork();
+    } catch (requestError) {
+      setTasks(previousTasks);
+      setError(requestError instanceof Error ? requestError.message : "Unable to move task");
+    } finally {
+      setDraggedTaskId(null);
+      setDropStatus(null);
+    }
+  }
+
+  function handleColumnDragOver(event: DragEvent<HTMLDivElement>, status: TaskStatus) {
+    if (!can("task.update")) return;
+    event.preventDefault();
+    setDropStatus(status);
   }
 
   function describeThread(thread: ChatThread) {
@@ -641,42 +765,28 @@ export default function WorkPage() {
         ) : null}
 
         {tab === "tasks" ? (
-          <DataTable empty={loading ? "Loading tasks..." : "No tasks found."} columns={["Task", "Assigned", "Sprint", "Due", "Progress", "Status", "Actions"]}>
-            {tasks.map((task) => (
-              <tr key={task.id} className="hover:bg-[#fbfcff]">
-                <Cell title={task.title} detail={`${task.priority} priority${task.description ? ` - ${task.description}` : ""}`} />
-                <td className="border-b border-[#edf1f7] px-4 py-4 text-sm text-[#667085]">{userName(task.assignedDeveloper)}</td>
-                <td className="border-b border-[#edf1f7] px-4 py-4 text-sm text-[#667085]">{sprints.find((sprint) => sprint.id === task.sprintId)?.name ?? "-"}</td>
-                <td className="border-b border-[#edf1f7] px-4 py-4 text-sm text-[#667085]">{dateInput(task.dueDate) || "-"}</td>
-                <td className="border-b border-[#edf1f7] px-4 py-4"><Progress value={Number(task.progressPercentage ?? 0)} /></td>
-                <td className="border-b border-[#edf1f7] px-4 py-4"><StatusBadge value={task.status} /></td>
-                <td className="border-b border-[#edf1f7] px-4 py-4">
-                  <div className="flex justify-end gap-2">
-                    <button onClick={() => openTaskDetail(task)} className="grid h-9 w-9 place-items-center rounded-md border border-[#d7dde8] text-[#111827]" aria-label="Task activity">
-                      <MessageSquare className="h-4 w-4" />
-                    </button>
-                    {can("taskTimeLog.create") ? (
-                      <button
-                        onClick={() => activeTimers[task.id] ? stopTimer(task) : startTimer(task)}
-                        className={`grid h-9 w-9 place-items-center rounded-md border ${activeTimers[task.id] ? "border-[#f3b4b4] text-[#b42318]" : "border-[#a7dfc0] text-[#137333]"}`}
-                        aria-label={activeTimers[task.id] ? "Stop timer" : "Start timer"}
-                      >
-                        {activeTimers[task.id] ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      </button>
-                    ) : null}
-                    <Actions
-                      canEdit={can("task.update")}
-                      canDelete={can("task.delete")}
-                      canShare={can("chat.message")}
-                      onShare={() => openShare({ kind: "task", item: task })}
-                      onEdit={() => openTask(task)}
-                      onDelete={() => removeItem("task", task)}
-                    />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </DataTable>
+          <KanbanBoard
+            tasks={tasks}
+            sprints={sprints}
+            activeTimers={activeTimers}
+            loading={loading}
+            canUpdate={can("task.update")}
+            canDelete={can("task.delete")}
+            canShare={can("chat.message")}
+            canTimeTrack={can("taskTimeLog.create")}
+            draggedTaskId={draggedTaskId}
+            dropStatus={dropStatus}
+            onDragStart={setDraggedTaskId}
+            onColumnDragOver={handleColumnDragOver}
+            onColumnDrop={moveTask}
+            onColumnLeave={() => setDropStatus(null)}
+            onOpenDetail={openTaskDetail}
+            onStartTimer={startTimer}
+            onStopTimer={stopTimer}
+            onShare={(task) => openShare({ kind: "task", item: task })}
+            onEdit={openTask}
+            onDelete={(task) => removeItem("task", task)}
+          />
         ) : null}
       </div>
 
@@ -757,6 +867,31 @@ export default function WorkPage() {
               <div className="mb-2 font-semibold text-[#111827]">Description</div>
               <div className="whitespace-pre-wrap text-sm text-[#475467]">{taskDetail.description || "No description added."}</div>
             </div>
+            <div className="rounded-md border border-[#d7dde8] p-4">
+              <div className="mb-3 flex items-center gap-2 font-semibold text-[#111827]"><Paperclip className="h-4 w-4" /> Attachments</div>
+              <div className="mb-3 space-y-2">
+                {taskAttachments.map((attachment) => (
+                  <a
+                    key={attachment.id}
+                    href={attachment.publicUrl || attachment.storagePath}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between rounded-md bg-[#f8fafc] px-3 py-2 text-sm font-medium text-[#2563eb]"
+                  >
+                    <span className="truncate">{attachment.originalName}</span>
+                    <span className="text-xs text-[#667085]">{formatDate(attachment.createdAt)}</span>
+                  </a>
+                ))}
+                {!taskAttachments.length ? <div className="text-sm text-[#667085]">No attachments yet.</div> : null}
+              </div>
+              {can("task.attachment.manage") ? (
+                <div className="grid gap-2 md:grid-cols-[1fr_1.4fr_auto]">
+                  <input value={attachmentForm.originalName} onChange={(event) => setAttachmentForm({ ...attachmentForm, originalName: event.target.value })} className="input" placeholder="Document name" />
+                  <input value={attachmentForm.publicUrl} onChange={(event) => setAttachmentForm({ ...attachmentForm, publicUrl: event.target.value })} className="input" placeholder="https://..." />
+                  <button onClick={addAttachment} className="h-10 rounded-md bg-[#111827] px-4 text-sm font-semibold text-white">Add</button>
+                </div>
+              ) : null}
+            </div>
             {can("task.blocker.manage") ? (
               <div className="rounded-md border border-[#f3b4b4] p-4">
                 <div className="mb-3 flex items-center gap-2 font-semibold text-[#b42318]"><AlertTriangle className="h-4 w-4" /> Add Blocker</div>
@@ -820,6 +955,235 @@ function ActionButton({ label, onClick, disabled = false }: { label: string; onC
       <Plus className="h-4 w-4" />
       Add {label}
     </button>
+  );
+}
+
+function KanbanBoard({
+  tasks,
+  sprints,
+  activeTimers,
+  loading,
+  canUpdate,
+  canDelete,
+  canShare,
+  canTimeTrack,
+  draggedTaskId,
+  dropStatus,
+  onDragStart,
+  onColumnDragOver,
+  onColumnDrop,
+  onColumnLeave,
+  onOpenDetail,
+  onStartTimer,
+  onStopTimer,
+  onShare,
+  onEdit,
+  onDelete
+}: {
+  tasks: Task[];
+  sprints: Sprint[];
+  activeTimers: Record<Id, TaskTimer | null>;
+  loading: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canShare: boolean;
+  canTimeTrack: boolean;
+  draggedTaskId: Id | null;
+  dropStatus: TaskStatus | null;
+  onDragStart: (taskId: Id) => void;
+  onColumnDragOver: (event: DragEvent<HTMLDivElement>, status: TaskStatus) => void;
+  onColumnDrop: (taskId: Id, status: TaskStatus) => void;
+  onColumnLeave: () => void;
+  onOpenDetail: (task: Task) => void;
+  onStartTimer: (task: Task) => void;
+  onStopTimer: (task: Task) => void;
+  onShare: (task: Task) => void;
+  onEdit: (task: Task) => void;
+  onDelete: (task: Task) => void;
+}) {
+  if (!tasks.length) {
+    return <div className="p-8 text-sm text-[#667085]">{loading ? "Loading tasks..." : "No tasks found."}</div>;
+  }
+
+  return (
+    <div className="overflow-x-auto bg-[#f8fafc] p-4">
+      <div className="flex min-h-[560px] gap-4">
+        {taskColumns.map((column) => {
+          const columnTasks = tasks.filter((task) => task.status === column.status);
+          return (
+            <div
+              key={column.status}
+              onDragOver={(event) => onColumnDragOver(event, column.status)}
+              onDragLeave={onColumnLeave}
+              onDrop={(event) => {
+                event.preventDefault();
+                if (draggedTaskId) onColumnDrop(draggedTaskId, column.status);
+              }}
+              className={cn(
+                "flex w-[310px] shrink-0 flex-col rounded-md border border-[#d7dde8] bg-white",
+                dropStatus === column.status ? "border-[#2563eb] ring-2 ring-[#bfdbfe]" : ""
+              )}
+            >
+              <div className="flex h-12 items-center justify-between border-b border-[#edf1f7] px-3">
+                <div className="flex items-center gap-2">
+                  <span className={cn("h-2.5 w-2.5 rounded-full", column.accent)} />
+                  <span className="text-sm font-semibold text-[#111827]">{column.label}</span>
+                </div>
+                <span className="rounded-full bg-[#edf1f7] px-2 py-0.5 text-xs font-semibold text-[#475467]">{columnTasks.length}</span>
+              </div>
+              <div className="flex-1 space-y-3 overflow-y-auto p-3">
+                {columnTasks.map((task) => (
+                  <KanbanTaskCard
+                    key={task.id}
+                    task={task}
+                    sprintName={sprints.find((sprint) => sprint.id === task.sprintId)?.name}
+                    activeTimer={activeTimers[task.id]}
+                    canUpdate={canUpdate}
+                    canDelete={canDelete}
+                    canShare={canShare}
+                    canTimeTrack={canTimeTrack}
+                    onDragStart={onDragStart}
+                    onOpenDetail={onOpenDetail}
+                    onStartTimer={onStartTimer}
+                    onStopTimer={onStopTimer}
+                    onShare={onShare}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                  />
+                ))}
+                {!columnTasks.length ? (
+                  <div className="rounded-md border border-dashed border-[#d7dde8] p-4 text-center text-xs font-medium text-[#98a2b3]">
+                    Drop tasks here
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function KanbanTaskCard({
+  task,
+  sprintName,
+  activeTimer,
+  canUpdate,
+  canDelete,
+  canShare,
+  canTimeTrack,
+  onDragStart,
+  onOpenDetail,
+  onStartTimer,
+  onStopTimer,
+  onShare,
+  onEdit,
+  onDelete
+}: {
+  task: Task;
+  sprintName?: string;
+  activeTimer?: TaskTimer | null;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canShare: boolean;
+  canTimeTrack: boolean;
+  onDragStart: (taskId: Id) => void;
+  onOpenDetail: (task: Task) => void;
+  onStartTimer: (task: Task) => void;
+  onStopTimer: (task: Task) => void;
+  onShare: (task: Task) => void;
+  onEdit: (task: Task) => void;
+  onDelete: (task: Task) => void;
+}) {
+  const labels = parseLabels(task.labels);
+  const overdue = isTaskOverdue(task);
+  const unresolvedBlockers = task.blockers?.filter((blockerItem) => !blockerItem.isResolved).length ?? 0;
+
+  return (
+    <article
+      draggable={canUpdate}
+      onDragStart={() => onDragStart(task.id)}
+      className={cn(
+        "rounded-md border border-l-4 border-[#d7dde8] bg-white p-3 shadow-sm transition hover:shadow-md",
+        canUpdate ? "cursor-grab active:cursor-grabbing" : "",
+        priorityClasses(task.priority)
+      )}
+    >
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <button onClick={() => onOpenDetail(task)} className="min-w-0 text-left">
+          <div className="line-clamp-2 text-sm font-semibold text-[#111827]">{task.title}</div>
+          {task.description ? <div className="mt-1 line-clamp-2 text-xs leading-5 text-[#667085]">{task.description}</div> : null}
+        </button>
+        <AssigneeAvatar user={task.assignedDeveloper} />
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide">{task.priority}</span>
+        {unresolvedBlockers ? <span className="rounded-full bg-[#fee2e2] px-2 py-0.5 text-[11px] font-bold text-[#991b1b]">{unresolvedBlockers} blocker</span> : null}
+        {labels.slice(0, 3).map((label) => (
+          <span key={label} className="inline-flex items-center gap-1 rounded-full bg-[#eef4ff] px-2 py-0.5 text-[11px] font-semibold text-[#1d4ed8]">
+            <Tag className="h-3 w-3" />
+            {label}
+          </span>
+        ))}
+      </div>
+
+      <Progress value={Number(task.progressPercentage ?? 0)} />
+
+      <div className="mt-3 grid gap-2 text-xs text-[#667085]">
+        <div className="flex items-center justify-between gap-3">
+          <span className="truncate">{sprintName || "No sprint"}</span>
+          <span className={cn("inline-flex items-center gap-1 font-semibold", overdue ? "text-[#b42318]" : "text-[#475467]")}>
+            <CalendarDays className="h-3.5 w-3.5" />
+            {formatDate(task.dueDate)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-1">
+            <Clock3 className="h-3.5 w-3.5" />
+            {Number(task.actualHours ?? 0)}/{Number(task.estimatedHours ?? 0)} hrs
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" />{task._count?.comments ?? 0}</span>
+            <span className="inline-flex items-center gap-1"><Paperclip className="h-3.5 w-3.5" />{task._count?.attachments ?? 0}</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between border-t border-[#edf1f7] pt-3">
+        <div className="flex gap-1.5">
+          <button onClick={() => onOpenDetail(task)} className="grid h-8 w-8 place-items-center rounded-md border border-[#d7dde8] bg-white text-[#111827]" aria-label="Open task">
+            <MessageSquare className="h-4 w-4" />
+          </button>
+          {canTimeTrack ? (
+            <button
+              onClick={() => activeTimer ? onStopTimer(task) : onStartTimer(task)}
+              className={cn("grid h-8 w-8 place-items-center rounded-md border bg-white", activeTimer ? "border-[#f3b4b4] text-[#b42318]" : "border-[#a7dfc0] text-[#137333]")}
+              aria-label={activeTimer ? "Stop timer" : "Start timer"}
+            >
+              {activeTimer ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </button>
+          ) : null}
+        </div>
+        <Actions
+          canEdit={canUpdate}
+          canDelete={canDelete}
+          canShare={canShare}
+          onShare={() => onShare(task)}
+          onEdit={() => onEdit(task)}
+          onDelete={() => onDelete(task)}
+        />
+      </div>
+    </article>
+  );
+}
+
+function AssigneeAvatar({ user }: { user?: User | null }) {
+  return (
+    <div title={userName(user)} className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-white bg-[#111827] text-xs font-bold text-white shadow-sm">
+      {user?.avatarUrl ? <img src={user.avatarUrl} alt={userName(user)} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center">{userInitials(user)}</div>}
+    </div>
   );
 }
 
