@@ -24,6 +24,12 @@ type User = {
   status: UserStatus;
   isActive?: boolean;
   userRoles?: Array<{ role?: Role }>;
+  projectMemberships?: Array<{
+    roleInProject: string;
+    project?: { id: string; title: string; code: string } | null;
+  }>;
+  managedProjects?: Array<{ id: string; title: string; code: string }>;
+  ledProjects?: Array<{ id: string; title: string; code: string }>;
 };
 
 type UserForm = {
@@ -55,6 +61,28 @@ function roleNames(user: User) {
 
 function roleIds(user: User) {
   return user.userRoles?.map((item) => item.role?.id).filter((id): id is string => Boolean(id)) ?? [];
+}
+
+function projectBadges(user: User) {
+  const badges = new Map<string, { label: string; role: string }>();
+
+  for (const project of user.managedProjects ?? []) {
+    badges.set(`managed-${project.id}`, { label: `${project.code} - ${project.title}`, role: "PROJECT_MANAGER" });
+  }
+
+  for (const project of user.ledProjects ?? []) {
+    badges.set(`led-${project.id}`, { label: `${project.code} - ${project.title}`, role: "TEAM_LEADER" });
+  }
+
+  for (const membership of user.projectMemberships ?? []) {
+    if (!membership.project) continue;
+    badges.set(`member-${membership.project.id}-${membership.roleInProject}`, {
+      label: `${membership.project.code} - ${membership.project.title}`,
+      role: membership.roleInProject
+    });
+  }
+
+  return [...badges.values()];
 }
 
 export default function TeamPage() {
@@ -192,7 +220,7 @@ export default function TeamPage() {
       <PageHeader
         eyebrow="People operations"
         title="Team"
-        description="Create, edit, deactivate, assign roles, and remove users from one management screen."
+        description="Manage the people available to you through active project assignments."
         actions={
           <>
             <button onClick={loadData} className="inline-flex h-10 items-center gap-2 rounded-md border border-[#d7dde8] bg-white px-3 text-sm font-semibold text-[#111827]">
@@ -299,11 +327,12 @@ export default function TeamPage() {
           <div className="text-sm text-[#667085]">Role-based access roster</div>
         </div>
         <div className="overflow-auto">
-          <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1120px] border-collapse text-left text-sm">
             <thead className="bg-[#f8fafc] text-[#667085]">
               <tr>
                 <th className="border-b border-[#d7dde8] px-4 py-3 font-semibold">User</th>
                 <th className="border-b border-[#d7dde8] px-4 py-3 font-semibold">Role</th>
+                <th className="border-b border-[#d7dde8] px-4 py-3 font-semibold">Projects</th>
                 <th className="border-b border-[#d7dde8] px-4 py-3 font-semibold">Phone</th>
                 <th className="border-b border-[#d7dde8] px-4 py-3 font-semibold">Status</th>
                 <th className="border-b border-[#d7dde8] px-4 py-3 text-right font-semibold">Actions</th>
@@ -321,14 +350,23 @@ export default function TeamPage() {
                       {roleNames(user).length ? roleNames(user).map((role) => <span key={role} className="rounded-md bg-[#eaf1ff] px-2 py-1 text-xs font-semibold text-[#174ea6]">{role}</span>) : <span className="text-[#667085]">No role</span>}
                     </div>
                   </td>
+                  <td className="border-b border-[#edf1f7] px-4 py-4">
+                    <div className="flex max-w-md flex-wrap gap-2">
+                      {projectBadges(user).length ? projectBadges(user).slice(0, 4).map((badge) => (
+                        <span key={`${badge.role}-${badge.label}`} className="rounded-md bg-[#f8fafc] px-2 py-1 text-xs font-semibold text-[#475467]" title={badge.role}>
+                          {badge.label}
+                        </span>
+                      )) : <span className="text-[#667085]">No active project</span>}
+                    </div>
+                  </td>
                   <td className="border-b border-[#edf1f7] px-4 py-4 text-[#667085]">{user.phone ?? "-"}</td>
                   <td className="border-b border-[#edf1f7] px-4 py-4"><StatusBadge value={user.status} /></td>
                   <td className="border-b border-[#edf1f7] px-4 py-4">
                     <div className="flex justify-end gap-2">
-                      {canUpdateUser ? <button onClick={() => openEdit(user)} className="grid h-9 w-9 place-items-center rounded-md border border-[#d7dde8] text-[#2563eb]" aria-label="Edit user">
+                      {canUpdateUser && (isAdmin || user.id !== sessionUser?.id) ? <button onClick={() => openEdit(user)} className="grid h-9 w-9 place-items-center rounded-md border border-[#d7dde8] text-[#2563eb]" aria-label="Edit user">
                         <Edit3 className="h-4 w-4" />
                       </button> : null}
-                      {canDeleteUser ? <button onClick={() => deleteUser(user)} className="grid h-9 w-9 place-items-center rounded-md border border-[#f3b4b4] text-[#b42318]" aria-label="Delete user">
+                      {canDeleteUser && user.id !== sessionUser?.id ? <button onClick={() => deleteUser(user)} className="grid h-9 w-9 place-items-center rounded-md border border-[#f3b4b4] text-[#b42318]" aria-label="Delete user">
                         <Trash2 className="h-4 w-4" />
                       </button> : null}
                     </div>

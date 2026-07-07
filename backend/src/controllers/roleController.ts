@@ -17,8 +17,8 @@ export const roleController = {
     res.status(201).json({ success: true, data });
   }),
 
-  list: asyncHandler(async (_req: Request, res: Response) => {
-    const data = await roleService.listRoles();
+  list: asyncHandler(async (req: Request, res: Response) => {
+    const data = await roleService.listRoles(req.user!);
     res.json({ success: true, data });
   }),
 

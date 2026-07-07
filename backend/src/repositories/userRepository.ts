@@ -10,7 +10,23 @@ export const userRepository = {
           where: { isActive: true, revokedAt: null },
           include: { role: true }
         },
-        developerProfile: true
+        developerProfile: true,
+        projectMemberships: {
+          where: { deletedAt: null, isActive: true, releasedDate: null },
+          include: {
+            project: {
+              select: { id: true, title: true, code: true, projectManagerId: true, teamLeaderId: true }
+            }
+          }
+        },
+        managedProjects: {
+          where: { deletedAt: null, isActive: true },
+          select: { id: true, title: true, code: true }
+        },
+        ledProjects: {
+          where: { deletedAt: null, isActive: true },
+          select: { id: true, title: true, code: true }
+        }
       }
     });
   },
@@ -23,7 +39,23 @@ export const userRepository = {
           where: { isActive: true, revokedAt: null },
           include: { role: true }
         },
-        developerProfile: true
+        developerProfile: true,
+        projectMemberships: {
+          where: { deletedAt: null, isActive: true, releasedDate: null },
+          include: {
+            project: {
+              select: { id: true, title: true, code: true, projectManagerId: true, teamLeaderId: true }
+            }
+          }
+        },
+        managedProjects: {
+          where: { deletedAt: null, isActive: true },
+          select: { id: true, title: true, code: true }
+        },
+        ledProjects: {
+          where: { deletedAt: null, isActive: true },
+          select: { id: true, title: true, code: true }
+        }
       }
     });
   },

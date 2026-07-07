@@ -13,7 +13,7 @@ function readParam(value: string | string[] | undefined, name: string) {
 
 export const userController = {
   create: asyncHandler(async (req: Request, res: Response) => {
-    const data = await userService.createUser(req.body);
+    const data = await userService.createUser(req.body, req.user!);
     res.status(201).json({ success: true, data });
   }),
 
@@ -23,22 +23,22 @@ export const userController = {
   }),
 
   getById: asyncHandler(async (req: Request, res: Response) => {
-    const data = await userService.getUserById(readParam(req.params.id, "id"));
+    const data = await userService.getUserById(readParam(req.params.id, "id"), req.user!);
     res.json({ success: true, data });
   }),
 
   update: asyncHandler(async (req: Request, res: Response) => {
-    const data = await userService.updateUser(readParam(req.params.id, "id"), req.body);
+    const data = await userService.updateUser(readParam(req.params.id, "id"), req.body, req.user!);
     res.json({ success: true, data });
   }),
 
   remove: asyncHandler(async (req: Request, res: Response) => {
-    const data = await userService.softDeleteUser(readParam(req.params.id, "id"));
+    const data = await userService.softDeleteUser(readParam(req.params.id, "id"), req.user!);
     res.json({ success: true, data });
   }),
 
   assignRoles: asyncHandler(async (req: Request, res: Response) => {
-    const data = await userService.assignRoles(readParam(req.params.id, "id"), req.body.roleIds, req.user?.id);
+    const data = await userService.assignRoles(readParam(req.params.id, "id"), req.body.roleIds, req.user!);
     res.json({ success: true, data });
   })
 };

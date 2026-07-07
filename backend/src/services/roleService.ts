@@ -1,9 +1,24 @@
 import { prisma } from "../prisma/client.js";
 import { roleRepository } from "../repositories/roleRepository.js";
 import { ApiError } from "../utils/apiError.js";
+import type { AuthUser } from "../types/auth.js";
 
 export const roleService = {
-  listRoles() {
+  listRoles(user: AuthUser) {
+    if (!user.roles.includes("admin")) {
+      const allowedSlugs = user.roles.includes("projectManager")
+        ? ["teamLeader", "teamMember"]
+        : user.roles.includes("teamLeader")
+          ? ["teamMember"]
+          : [];
+
+      return prisma.role.findMany({
+        where: { slug: { in: allowedSlugs }, deletedAt: null, isActive: true },
+        orderBy: { name: "asc" },
+        include: { rolePermissions: { include: { permission: true } } }
+      });
+    }
+
     return roleRepository.list();
   },
 

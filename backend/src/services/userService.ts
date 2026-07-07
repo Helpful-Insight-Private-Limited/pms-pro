@@ -1,8 +1,188 @@
 import { prisma } from "../prisma/client.js";
+import type { Prisma } from "../generated/prisma/index.js";
 import { userRepository } from "../repositories/userRepository.js";
 import { ApiError } from "../utils/apiError.js";
 import { hashPassword } from "../utils/password.js";
 import type { AuthUser } from "../types/auth.js";
+
+const userListInclude = {
+  userRoles: {
+    where: { isActive: true, revokedAt: null },
+    include: { role: true }
+  },
+  developerProfile: true,
+  projectMemberships: {
+    where: { deletedAt: null, isActive: true, releasedDate: null },
+    include: {
+      project: {
+        select: { id: true, title: true, code: true, projectManagerId: true, teamLeaderId: true }
+      }
+    }
+  },
+  managedProjects: {
+    where: { deletedAt: null, isActive: true },
+    select: { id: true, title: true, code: true }
+  },
+  ledProjects: {
+    where: { deletedAt: null, isActive: true },
+    select: { id: true, title: true, code: true }
+  }
+} as const;
+
+function isAdmin(user?: AuthUser) {
+  return Boolean(user?.roles.includes("admin"));
+}
+
+async function visibleUserIdsFor(user: AuthUser) {
+  const visibleUserIds = new Set<string>([user.id]);
+
+  if (user.roles.includes("projectManager")) {
+    const projects = await prisma.project.findMany({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        OR: [
+          { projectManagerId: user.id },
+          {
+            members: {
+              some: {
+                userId: user.id,
+                roleInProject: "PROJECT_MANAGER",
+                deletedAt: null,
+                isActive: true,
+                releasedDate: null
+              }
+            }
+          }
+        ]
+      },
+      select: {
+        projectManagerId: true,
+        teamLeaderId: true,
+        members: { where: { deletedAt: null, isActive: true, releasedDate: null }, select: { userId: true } }
+      }
+    });
+
+    for (const project of projects) {
+      visibleUserIds.add(project.projectManagerId);
+      if (project.teamLeaderId) visibleUserIds.add(project.teamLeaderId);
+      for (const member of project.members) visibleUserIds.add(member.userId);
+    }
+  }
+
+  if (user.roles.includes("teamLeader")) {
+    const projects = await prisma.project.findMany({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        OR: [
+          { teamLeaderId: user.id },
+          {
+            members: {
+              some: {
+                userId: user.id,
+                roleInProject: "TEAM_LEADER",
+                deletedAt: null,
+                isActive: true,
+                releasedDate: null
+              }
+            }
+          }
+        ]
+      },
+      select: {
+        projectManagerId: true,
+        teamLeaderId: true,
+        members: { where: { deletedAt: null, isActive: true, releasedDate: null }, select: { userId: true } }
+      }
+    });
+
+    for (const project of projects) {
+      visibleUserIds.add(project.projectManagerId);
+      if (project.teamLeaderId) visibleUserIds.add(project.teamLeaderId);
+      for (const member of project.members) visibleUserIds.add(member.userId);
+    }
+  }
+
+  return [...visibleUserIds];
+}
+
+async function allowedRoleIdsFor(actor?: AuthUser) {
+  if (isAdmin(actor)) {
+    const roles = await prisma.role.findMany({ where: { deletedAt: null, isActive: true }, select: { id: true } });
+    return new Set(roles.map((role) => role.id));
+  }
+
+  const allowedSlugs = actor?.roles.includes("projectManager")
+    ? ["teamLeader", "teamMember"]
+    : actor?.roles.includes("teamLeader")
+      ? ["teamMember"]
+      : [];
+
+  const roles = await prisma.role.findMany({
+    where: { slug: { in: allowedSlugs }, deletedAt: null, isActive: true },
+    select: { id: true }
+  });
+
+  return new Set(roles.map((role) => role.id));
+}
+
+async function assertRolesAllowed(roleIds: string[], actor?: AuthUser) {
+  const allowedRoleIds = await allowedRoleIdsFor(actor);
+
+  if (roleIds.some((roleId) => !allowedRoleIds.has(roleId))) {
+    throw new ApiError(403, "ROLE_ASSIGNMENT_FORBIDDEN", "You cannot assign one or more selected roles");
+  }
+}
+
+async function autoAttachCreatedUserToManagedProjects(tx: Prisma.TransactionClient, createdUserId: string, roleIds: string[], actor?: AuthUser) {
+  if (!actor?.roles.includes("projectManager")) return;
+
+  const selectedRoles = await tx.role.findMany({ where: { id: { in: roleIds } }, select: { slug: true } });
+  const roleInProject = selectedRoles.some((role) => role.slug === "teamLeader") ? "TEAM_LEADER" : "DEVELOPER";
+  const projects = await tx.project.findMany({
+    where: {
+      deletedAt: null,
+      isActive: true,
+      OR: [
+        { projectManagerId: actor.id },
+        {
+          members: {
+            some: {
+              userId: actor.id,
+              roleInProject: "PROJECT_MANAGER",
+              deletedAt: null,
+              isActive: true,
+              releasedDate: null
+            }
+          }
+        }
+      ]
+    },
+    select: { id: true }
+  });
+
+  for (const project of projects) {
+    await tx.projectMember.upsert({
+      where: { projectId_userId: { projectId: project.id, userId: createdUserId } },
+      update: {
+        roleInProject,
+        allocationPercentage: 100,
+        releasedDate: null,
+        deletedAt: null,
+        isActive: true,
+        updatedBy: actor.id
+      },
+      create: {
+        projectId: project.id,
+        userId: createdUserId,
+        roleInProject,
+        allocationPercentage: 100,
+        createdBy: actor.id
+      }
+    });
+  }
+}
 
 export const userService = {
   async listUsers(user: AuthUser) {
@@ -10,43 +190,11 @@ export const userService = {
       return userRepository.list();
     }
 
-    const visibleUserIds = new Set<string>([user.id]);
-
-    if (user.roles.includes("projectManager")) {
-      const projects = await prisma.project.findMany({
-        where: { projectManagerId: user.id, deletedAt: null, isActive: true },
-        select: {
-          teamLeaderId: true,
-          members: { where: { deletedAt: null, isActive: true }, select: { userId: true } }
-        }
-      });
-
-      for (const project of projects) {
-        if (project.teamLeaderId) visibleUserIds.add(project.teamLeaderId);
-        for (const member of project.members) visibleUserIds.add(member.userId);
-      }
-    }
-
-    if (user.roles.includes("teamLeader")) {
-      const projects = await prisma.project.findMany({
-        where: { teamLeaderId: user.id, deletedAt: null, isActive: true },
-        select: { members: { where: { deletedAt: null, isActive: true }, select: { userId: true } } }
-      });
-
-      for (const project of projects) {
-        for (const member of project.members) visibleUserIds.add(member.userId);
-      }
-    }
+    const visibleUserIds = await visibleUserIdsFor(user);
 
     return prisma.user.findMany({
-      where: { id: { in: [...visibleUserIds] }, deletedAt: null },
-      include: {
-        userRoles: {
-          where: { isActive: true, revokedAt: null },
-          include: { role: true }
-        },
-        developerProfile: true
-      },
+      where: { id: { in: visibleUserIds }, deletedAt: null, isActive: true },
+      include: userListInclude,
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }]
     });
   },
@@ -55,7 +203,14 @@ export const userService = {
     return userRepository.list();
   },
 
-  async getUserById(id: string) {
+  async getUserById(id: string, actor?: AuthUser) {
+    if (actor && !actor.roles.includes("admin")) {
+      const visibleUserIds = await visibleUserIdsFor(actor);
+      if (!visibleUserIds.includes(id)) {
+        throw new ApiError(404, "USER_NOT_FOUND", "User not found");
+      }
+    }
+
     const user = await userRepository.findById(id);
 
     if (!user || user.deletedAt) {
@@ -72,7 +227,8 @@ export const userService = {
     password: string;
     phone?: string;
     roleIds: string[];
-  }) {
+  }, actor?: AuthUser) {
+    await assertRolesAllowed(input.roleIds, actor);
     const existingUser = await userRepository.findByEmail(input.email);
 
     if (existingUser && !existingUser.deletedAt) {
@@ -140,20 +296,21 @@ export const userService = {
         });
       }
 
+      await autoAttachCreatedUserToManagedProjects(tx, user.id, input.roleIds, actor);
+
       return tx.user.findUniqueOrThrow({
         where: { id: user.id },
-        include: {
-          userRoles: {
-            where: { isActive: true, revokedAt: null },
-            include: { role: true }
-          }
-        }
+        include: userListInclude
       });
     });
   },
 
-  async updateUser(id: string, input: Record<string, unknown>) {
-    await this.getUserById(id);
+  async updateUser(id: string, input: Record<string, unknown>, actor?: AuthUser) {
+    if (actor && !actor.roles.includes("admin") && id === actor.id) {
+      throw new ApiError(403, "SELF_USER_MANAGEMENT_FORBIDDEN", "Use the profile page to update your own account");
+    }
+
+    await this.getUserById(id, actor);
 
     return prisma.user.update({
       where: { id },
@@ -161,8 +318,12 @@ export const userService = {
     });
   },
 
-  async softDeleteUser(id: string) {
-    await this.getUserById(id);
+  async softDeleteUser(id: string, actor?: AuthUser) {
+    if (actor && id === actor.id) {
+      throw new ApiError(403, "SELF_DELETE_FORBIDDEN", "You cannot delete your own account");
+    }
+
+    await this.getUserById(id, actor);
 
     return prisma.user.update({
       where: { id },
@@ -173,8 +334,13 @@ export const userService = {
     });
   },
 
-  async assignRoles(userId: string, roleIds: string[], assignedBy?: string) {
-    await this.getUserById(userId);
+  async assignRoles(userId: string, roleIds: string[], actor?: AuthUser) {
+    if (actor && !actor.roles.includes("admin") && userId === actor.id) {
+      throw new ApiError(403, "SELF_ROLE_ASSIGNMENT_FORBIDDEN", "You cannot change your own roles");
+    }
+
+    await this.getUserById(userId, actor);
+    await assertRolesAllowed(roleIds, actor);
 
     const roleCount = await prisma.role.count({
       where: {
@@ -208,12 +374,12 @@ export const userService = {
           update: {
             isActive: true,
             revokedAt: null,
-            assignedBy
+            assignedBy: actor?.id
           },
           create: {
             userId,
             roleId,
-            assignedBy
+            assignedBy: actor?.id
           }
         });
       }
