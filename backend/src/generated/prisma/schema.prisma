@@ -527,6 +527,29 @@ model TechnologyStackMaster {
   @@map("technologyStackMasters")
 }
 
+model SiteSetting {
+  id              String   @id @default(cuid()) @db.VarChar(191)
+  key             String   @unique @default("default") @db.VarChar(50)
+  appName         String   @default("PMS Workspace") @db.VarChar(150)
+  tagline         String?  @db.VarChar(255)
+  logoUrl         String?  @db.VarChar(500)
+  faviconUrl      String?  @db.VarChar(500)
+  metaTitle       String   @default("PMS") @db.VarChar(150)
+  metaDescription String?  @db.VarChar(300)
+  metaKeywords    String?  @db.VarChar(500)
+  companyName     String?  @db.VarChar(150)
+  supportEmail    String?  @db.VarChar(191)
+  primaryColor    String   @default("#111827") @db.VarChar(20)
+  accentColor     String   @default("#f4c430") @db.VarChar(20)
+  createdBy       String?  @db.VarChar(191)
+  updatedBy       String?  @db.VarChar(191)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([key])
+  @@map("siteSettings")
+}
+
 model Project {
   id                  String        @id @default(cuid()) @db.VarChar(191)
   title               String        @db.VarChar(191)

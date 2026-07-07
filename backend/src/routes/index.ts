@@ -12,6 +12,7 @@ import { notificationRoutes } from "./notificationRoutes.js";
 import { permissionRoutes } from "./permissionRoutes.js";
 import { projectRoutes } from "./projectRoutes.js";
 import { roleRoutes } from "./roleRoutes.js";
+import { systemRoutes } from "./systemRoutes.js";
 import { userRoutes } from "./userRoutes.js";
 
 export const routes = Router();
@@ -30,3 +31,4 @@ routes.use("/jobs", jobRoutes);
 routes.use("/masters", masterRoutes);
 routes.use("/reports", advancedReportRoutes);
 routes.use("/activity-logs", activityLogRoutes);
+routes.use("/system", systemRoutes);

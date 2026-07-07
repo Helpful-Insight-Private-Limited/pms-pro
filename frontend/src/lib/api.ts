@@ -95,6 +95,24 @@ export type TechnologyStackInput = {
   category?: string | null;
 };
 
+export type SiteSettings = {
+  id: Id;
+  key: string;
+  appName: string;
+  tagline?: string | null;
+  logoUrl?: string | null;
+  faviconUrl?: string | null;
+  metaTitle: string;
+  metaDescription?: string | null;
+  metaKeywords?: string | null;
+  companyName?: string | null;
+  supportEmail?: string | null;
+  primaryColor: string;
+  accentColor: string;
+};
+
+export type SiteSettingsInput = Partial<Omit<SiteSettings, "id" | "key">>;
+
 export type UpdateProfileInput = {
   firstName: string;
   lastName?: string | null;
@@ -476,6 +494,13 @@ function del<T>(path: string) {
 }
 
 export const api = {
+  system: {
+    siteSettings: <T = SiteSettings>() => get<T>("/system/site-settings"),
+    updateSiteSettings: <T = SiteSettings>(body: SiteSettingsInput) => patch<T>("/system/site-settings", body),
+    cleanDemoData: <T = { cleanedAt: string; preservedAdmins: number; summary: Record<string, number> }>() =>
+      post<T>("/system/clean-demo-data", { confirmation: "CLEAN SYSTEM" })
+  },
+
   auth: {
     login: (body: { email: string; password: string }) => post<LoginResponse>("/auth/login", body),
     refresh: () => post<{ accessToken: string }>("/auth/refresh"),

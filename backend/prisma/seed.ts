@@ -22,6 +22,8 @@ const permissions = [
   "permission.assign",
   "master.view",
   "master.manage",
+  "system.manage",
+  "system.cleanup",
   "calendar.view",
   "calendar.manage",
   "leave.view",

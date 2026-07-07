@@ -323,6 +323,26 @@ exports.Prisma.TechnologyStackMasterScalarFieldEnum = {
   isActive: 'isActive'
 };
 
+exports.Prisma.SiteSettingScalarFieldEnum = {
+  id: 'id',
+  key: 'key',
+  appName: 'appName',
+  tagline: 'tagline',
+  logoUrl: 'logoUrl',
+  faviconUrl: 'faviconUrl',
+  metaTitle: 'metaTitle',
+  metaDescription: 'metaDescription',
+  metaKeywords: 'metaKeywords',
+  companyName: 'companyName',
+  supportEmail: 'supportEmail',
+  primaryColor: 'primaryColor',
+  accentColor: 'accentColor',
+  createdBy: 'createdBy',
+  updatedBy: 'updatedBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.ProjectScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -899,6 +919,24 @@ exports.Prisma.TechnologyStackMasterOrderByRelevanceFieldEnum = {
   updatedBy: 'updatedBy'
 };
 
+exports.Prisma.SiteSettingOrderByRelevanceFieldEnum = {
+  id: 'id',
+  key: 'key',
+  appName: 'appName',
+  tagline: 'tagline',
+  logoUrl: 'logoUrl',
+  faviconUrl: 'faviconUrl',
+  metaTitle: 'metaTitle',
+  metaDescription: 'metaDescription',
+  metaKeywords: 'metaKeywords',
+  companyName: 'companyName',
+  supportEmail: 'supportEmail',
+  primaryColor: 'primaryColor',
+  accentColor: 'accentColor',
+  createdBy: 'createdBy',
+  updatedBy: 'updatedBy'
+};
+
 exports.Prisma.ProjectOrderByRelevanceFieldEnum = {
   id: 'id',
   title: 'title',
@@ -1336,6 +1374,7 @@ exports.Prisma.ModelName = {
   Client: 'Client',
   CurrencyMaster: 'CurrencyMaster',
   TechnologyStackMaster: 'TechnologyStackMaster',
+  SiteSetting: 'SiteSetting',
   Project: 'Project',
   ProjectMember: 'ProjectMember',
   ProjectAttachment: 'ProjectAttachment',

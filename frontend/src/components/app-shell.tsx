@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, Bell, BriefcaseBusiness, CalendarDays, Check, ClipboardList, FolderKanban, LayoutDashboard, ListTodo, LogOut, Menu, MessageCircle, Search, Settings, UserCircle, Users } from "lucide-react";
 import { ChatDrawer } from "@/components/chat-drawer";
-import { api, clearSession, type Id } from "@/lib/api";
+import { api, clearSession, type Id, type SiteSettings } from "@/lib/api";
 import { disconnectRealtimeSocket, getRealtimeSocket } from "@/lib/realtime";
 import { enablePushNotifications, isPushSupported } from "@/lib/push-notifications";
 import { useSessionUser } from "@/lib/session";
@@ -52,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [initialChatThreadId, setInitialChatThreadId] = useState<Id | null>(null);
   const [browserNotificationPermission, setBrowserNotificationPermission] = useState<NotificationPermission>("default");
   const [pushError, setPushError] = useState<string | null>(null);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
 
   function chatUnreadByThread(items: NotificationItem[]) {
     return items.reduce<Record<Id, number>>((counts, item) => {
@@ -67,6 +68,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined" && "Notification" in window) {
       setBrowserNotificationPermission(Notification.permission);
     }
+  }, []);
+
+  useEffect(() => {
+    api.system.siteSettings<SiteSettings>()
+      .then((settings) => {
+        setSiteSettings(settings);
+        document.title = settings.metaTitle || settings.appName;
+        const description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+        if (description && settings.metaDescription) description.content = settings.metaDescription;
+        if (settings.faviconUrl) {
+          const existingIcon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+          const icon = existingIcon ?? document.createElement("link");
+          icon.rel = "icon";
+          icon.href = settings.faviconUrl;
+          if (!existingIcon) document.head.appendChild(icon);
+        }
+      })
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -181,6 +200,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const appName = siteSettings?.appName || "PMS Workspace";
+  const tagline = siteSettings?.tagline || "Project OS";
+  const brandInitial = appName.slice(0, 1).toUpperCase();
+  const primaryColor = siteSettings?.primaryColor || "#111827";
+  const accentColor = siteSettings?.accentColor || "#f4c430";
+
   const clearChatThreadUnread = useCallback(async (threadId: Id) => {
     const unreadNotifications = notifications.filter((item) => item.status === "UNREAD" && item.type === "CHAT_MESSAGE" && item.metadata?.threadId === threadId);
     if (unreadNotifications.length === 0) return;
@@ -202,10 +227,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="fixed inset-y-0 left-0 hidden w-72 border-r border-[#d7dde8] bg-white text-[#111827] lg:block">
         <div className="flex h-20 items-center border-b border-[#edf1f7] px-5">
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-md bg-[#111827] text-lg font-black text-[#f4c430] shadow-sm">P</div>
+            <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-md text-lg font-black shadow-sm" style={{ backgroundColor: primaryColor, color: accentColor }}>
+              {siteSettings?.logoUrl ? <img src={siteSettings.logoUrl} alt={`${appName} logo`} className="h-full w-full object-contain p-1" /> : brandInitial}
+            </div>
             <div>
-              <div className="text-xs font-semibold uppercase text-[#2563eb]">Project OS</div>
-              <div className="text-lg font-semibold">PMS Workspace</div>
+              <div className="max-w-40 truncate text-xs font-semibold uppercase text-[#2563eb]">{tagline}</div>
+              <div className="max-w-40 truncate text-lg font-semibold">{appName}</div>
             </div>
           </div>
         </div>
@@ -253,8 +280,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="text-sm text-[#667085]">Search projects, tasks, people</span>
             </div>
             <div className="md:hidden">
-              <div className="text-sm font-semibold text-[#111827]">PMS</div>
-              <div className="text-xs text-[#667085]">Workspace</div>
+              <div className="text-sm font-semibold text-[#111827]">{appName}</div>
+              <div className="text-xs text-[#667085]">{siteSettings?.companyName || "Workspace"}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
