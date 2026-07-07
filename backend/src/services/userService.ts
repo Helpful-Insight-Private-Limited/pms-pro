@@ -2,9 +2,56 @@ import { prisma } from "../prisma/client.js";
 import { userRepository } from "../repositories/userRepository.js";
 import { ApiError } from "../utils/apiError.js";
 import { hashPassword } from "../utils/password.js";
+import type { AuthUser } from "../types/auth.js";
 
 export const userService = {
-  async listUsers() {
+  async listUsers(user: AuthUser) {
+    if (user.roles.includes("admin")) {
+      return userRepository.list();
+    }
+
+    const visibleUserIds = new Set<string>([user.id]);
+
+    if (user.roles.includes("projectManager")) {
+      const projects = await prisma.project.findMany({
+        where: { projectManagerId: user.id, deletedAt: null, isActive: true },
+        select: {
+          teamLeaderId: true,
+          members: { where: { deletedAt: null, isActive: true }, select: { userId: true } }
+        }
+      });
+
+      for (const project of projects) {
+        if (project.teamLeaderId) visibleUserIds.add(project.teamLeaderId);
+        for (const member of project.members) visibleUserIds.add(member.userId);
+      }
+    }
+
+    if (user.roles.includes("teamLeader")) {
+      const projects = await prisma.project.findMany({
+        where: { teamLeaderId: user.id, deletedAt: null, isActive: true },
+        select: { members: { where: { deletedAt: null, isActive: true }, select: { userId: true } } }
+      });
+
+      for (const project of projects) {
+        for (const member of project.members) visibleUserIds.add(member.userId);
+      }
+    }
+
+    return prisma.user.findMany({
+      where: { id: { in: [...visibleUserIds] }, deletedAt: null },
+      include: {
+        userRoles: {
+          where: { isActive: true, revokedAt: null },
+          include: { role: true }
+        },
+        developerProfile: true
+      },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }]
+    });
+  },
+
+  async listAllUsers() {
     return userRepository.list();
   },
 

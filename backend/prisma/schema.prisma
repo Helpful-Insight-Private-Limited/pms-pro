@@ -170,6 +170,13 @@ enum LeaveStatus {
   CANCELLED
 }
 
+enum LeaveApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NOT_REQUIRED
+}
+
 model User {
   id              String     @id @default(cuid()) @db.VarChar(191)
   firstName       String     @db.VarChar(100)
@@ -1150,6 +1157,18 @@ model DeveloperLeave {
   startDate   DateTime    @db.Date
   endDate     DateTime    @db.Date
   reason      String?     @db.Text
+  teamLeaderApprovalStatus    LeaveApprovalStatus @default(PENDING)
+  teamLeaderApprovedBy        String?             @db.VarChar(191)
+  teamLeaderApprovalNote      String?             @db.Text
+  teamLeaderApprovedAt        DateTime?
+  projectManagerApprovalStatus LeaveApprovalStatus @default(PENDING)
+  projectManagerApprovedBy     String?             @db.VarChar(191)
+  projectManagerApprovalNote   String?             @db.Text
+  projectManagerApprovedAt     DateTime?
+  adminApprovalStatus          LeaveApprovalStatus @default(NOT_REQUIRED)
+  adminApprovedBy              String?             @db.VarChar(191)
+  adminApprovalNote            String?             @db.Text
+  adminApprovedAt              DateTime?
   approvedBy  String?     @db.VarChar(191)
   approvedAt  DateTime?
   createdBy   String?     @db.VarChar(191)

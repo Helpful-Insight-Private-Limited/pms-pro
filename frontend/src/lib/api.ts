@@ -357,6 +357,7 @@ export type DeveloperLeaveInput = {
   startDate: string;
   endDate: string;
   reason?: string | null;
+  approvalNote?: string | null;
 };
 
 export type HolidayInput = {

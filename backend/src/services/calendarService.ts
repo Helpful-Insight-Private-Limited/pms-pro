@@ -24,6 +24,7 @@ type LeaveInput = {
   startDate?: Date;
   endDate?: Date;
   reason?: string | null;
+  approvalNote?: string | null;
   approvedBy?: string | null;
   approvedAt?: Date | null;
   isActive?: boolean;
@@ -80,6 +81,18 @@ function canManagePeople(user: AuthUser) {
   return user.roles.includes("admin") || user.roles.includes("projectManager") || user.roles.includes("teamLeader");
 }
 
+function isAdmin(user: AuthUser) {
+  return user.roles.includes("admin");
+}
+
+function isProjectManager(user: AuthUser) {
+  return user.roles.includes("projectManager");
+}
+
+function isTeamLeader(user: AuthUser) {
+  return user.roles.includes("teamLeader");
+}
+
 function isWeekend(date: Date) {
   const day = date.getUTCDay();
   return day === 0 || day === 6;
@@ -114,6 +127,113 @@ async function assertActiveUser(userId: string) {
   if (!user) throw new ApiError(400, "INVALID_DEVELOPER", "Developer is not an active user");
 }
 
+async function userRoleSlugs(userId: string) {
+  const userRoles = await prisma.userRole.findMany({
+    where: { userId, isActive: true, revokedAt: null, role: { deletedAt: null, isActive: true } },
+    select: { role: { select: { slug: true } } }
+  });
+
+  return userRoles.map((item) => item.role.slug);
+}
+
+async function managedDeveloperIds(user: AuthUser) {
+  if (isAdmin(user)) return undefined;
+
+  const ids = new Set<string>([user.id]);
+
+  if (isProjectManager(user)) {
+    const projects = await prisma.project.findMany({
+      where: { projectManagerId: user.id, deletedAt: null, isActive: true },
+      select: {
+        teamLeaderId: true,
+        members: { where: { deletedAt: null, isActive: true }, select: { userId: true } }
+      }
+    });
+    for (const project of projects) {
+      if (project.teamLeaderId) ids.add(project.teamLeaderId);
+      for (const member of project.members) ids.add(member.userId);
+    }
+  }
+
+  if (isTeamLeader(user)) {
+    const projects = await prisma.project.findMany({
+      where: { teamLeaderId: user.id, deletedAt: null, isActive: true },
+      select: { members: { where: { deletedAt: null, isActive: true }, select: { userId: true } } }
+    });
+    for (const project of projects) {
+      for (const member of project.members) ids.add(member.userId);
+    }
+  }
+
+  return [...ids];
+}
+
+async function leaveHierarchy(developerId: string) {
+  const roles = await userRoleSlugs(developerId);
+  const developerIsPm = roles.includes("projectManager");
+  const developerIsTl = roles.includes("teamLeader");
+  const projectAsLeader = await prisma.project.findFirst({
+    where: { teamLeaderId: developerId, deletedAt: null, isActive: true },
+    select: { projectManagerId: true }
+  });
+  const projectAsMember = await prisma.project.findFirst({
+    where: {
+      deletedAt: null,
+      isActive: true,
+      members: { some: { userId: developerId, deletedAt: null, isActive: true } }
+    },
+    select: { teamLeaderId: true, projectManagerId: true }
+  });
+
+  if (developerIsPm) {
+    return {
+      role: "projectManager",
+      teamLeaderRequired: false,
+      projectManagerRequired: false,
+      adminRequired: true,
+      teamLeaderId: null,
+      projectManagerId: null
+    };
+  }
+
+  if (developerIsTl) {
+    const projectManagerId = projectAsLeader?.projectManagerId ?? projectAsMember?.projectManagerId ?? null;
+    if (!projectManagerId) throw new ApiError(400, "LEAVE_APPROVER_NOT_FOUND", "No project manager is assigned for this team leader");
+    return {
+      role: "teamLeader",
+      teamLeaderRequired: false,
+      projectManagerRequired: true,
+      adminRequired: false,
+      teamLeaderId: null,
+      projectManagerId
+    };
+  }
+
+  const teamLeaderId = projectAsMember?.teamLeaderId ?? null;
+  const projectManagerId = projectAsMember?.projectManagerId ?? null;
+  if (!teamLeaderId || !projectManagerId) throw new ApiError(400, "LEAVE_APPROVER_NOT_FOUND", "Team member leave requires assigned team leader and project manager");
+
+  return {
+    role: "teamMember",
+    teamLeaderRequired: true,
+    projectManagerRequired: true,
+    adminRequired: false,
+    teamLeaderId,
+    projectManagerId
+  };
+}
+
+function finalLeaveStatus(input: {
+  teamLeaderApprovalStatus: string;
+  projectManagerApprovalStatus: string;
+  adminApprovalStatus: string;
+}) {
+  const statuses = [input.teamLeaderApprovalStatus, input.projectManagerApprovalStatus, input.adminApprovalStatus].filter((status) => status !== "NOT_REQUIRED");
+  if (statuses.includes("REJECTED")) return "REJECTED";
+  if (statuses.length > 0 && statuses.every((status) => status === "APPROVED")) return "APPROVED";
+  return "PENDING";
+}
+
 function eventShape(input: {
   id: string;
   title: string;
@@ -146,6 +266,7 @@ export const calendarService = {
   async listEvents(query: CalendarQuery, _user: AuthUser) {
     const { fromDate, toDate } = dateRange(query);
     const projectId = typeof query.projectId === "string" ? query.projectId : undefined;
+    const visibleDeveloperIds = await managedDeveloperIds(_user);
 
     const [customEvents, projects, milestones, sprints, tasks, leaves, holidays] = await Promise.all([
       prisma.calendarEvent.findMany({
@@ -215,6 +336,7 @@ export const calendarService = {
           deletedAt: null,
           isActive: true,
           status: "APPROVED",
+          ...(visibleDeveloperIds ? { developerId: { in: visibleDeveloperIds } } : {}),
           startDate: { lte: toDate },
           endDate: { gte: fromDate }
         },
@@ -400,12 +522,14 @@ export const calendarService = {
   async listLeaves(query: CalendarQuery, user: AuthUser) {
     const { fromDate, toDate } = dateRange(query);
     const requestedDeveloperId = typeof query.developerId === "string" ? query.developerId : undefined;
-    const developerId = canManagePeople(user) ? requestedDeveloperId : user.id;
+    const visibleDeveloperIds = await managedDeveloperIds(user);
+    const developerId = requestedDeveloperId ?? (!canManagePeople(user) ? user.id : undefined);
 
     return prisma.developerLeave.findMany({
       where: {
         deletedAt: null,
         isActive: true,
+        ...(visibleDeveloperIds ? { developerId: { in: visibleDeveloperIds } } : {}),
         ...(developerId ? { developerId } : {}),
         startDate: { lte: toDate },
         endDate: { gte: fromDate }
@@ -418,20 +542,28 @@ export const calendarService = {
   },
 
   async createLeave(input: Required<Pick<LeaveInput, "startDate" | "endDate">> & LeaveInput, user: AuthUser) {
-    const isManager = canManagePeople(user);
-    const developerId = isManager && input.developerId ? input.developerId : user.id;
+    const visibleDeveloperIds = await managedDeveloperIds(user);
+    const developerId = canManagePeople(user) && input.developerId ? input.developerId : user.id;
+    if (visibleDeveloperIds && !visibleDeveloperIds.includes(developerId)) {
+      throw new ApiError(403, "FORBIDDEN", "You cannot request leave for this user");
+    }
     await assertActiveUser(developerId);
+    const hierarchy = await leaveHierarchy(developerId);
+    const teamLeaderApprovalStatus = hierarchy.teamLeaderRequired ? "PENDING" : "NOT_REQUIRED";
+    const projectManagerApprovalStatus = hierarchy.projectManagerRequired ? "PENDING" : "NOT_REQUIRED";
+    const adminApprovalStatus = hierarchy.adminRequired ? "PENDING" : "NOT_REQUIRED";
 
     const leave = await prisma.developerLeave.create({
       data: {
         developerId,
         type: input.type ?? "FULL_DAY",
-        status: isManager ? input.status ?? "PENDING" : "PENDING",
+        status: "PENDING",
         startDate: input.startDate,
         endDate: input.endDate,
         reason: input.reason,
-        approvedBy: isManager && input.status === "APPROVED" ? user.id : null,
-        approvedAt: isManager && input.status === "APPROVED" ? new Date() : null,
+        teamLeaderApprovalStatus,
+        projectManagerApprovalStatus,
+        adminApprovalStatus,
         createdBy: user.id
       }
     });
@@ -452,23 +584,100 @@ export const calendarService = {
     const existing = await prisma.developerLeave.findFirst({ where: { id, deletedAt: null } });
     if (!existing) throw new ApiError(404, "LEAVE_NOT_FOUND", "Leave request not found");
 
-    const isManager = canManagePeople(user);
-    if (!isManager && existing.developerId !== user.id) {
-      throw new ApiError(403, "FORBIDDEN", "You can only update your own leave request");
+    const hierarchy = await leaveHierarchy(existing.developerId);
+    const now = new Date();
+    const requestedStatus = input.status;
+    const approvalNote = input.approvalNote ?? null;
+
+    if (existing.developerId === user.id && !requestedStatus) {
+      if (existing.status !== "PENDING") {
+        throw new ApiError(400, "LEAVE_LOCKED", "Only pending leave requests can be edited by the requester");
+      }
+      const leave = await prisma.developerLeave.update({
+        where: { id },
+        data: {
+          type: input.type ?? existing.type,
+          startDate: input.startDate ?? existing.startDate,
+          endDate: input.endDate ?? existing.endDate,
+          reason: input.reason,
+          updatedBy: user.id
+        }
+      });
+
+      await activityLogService.create({
+        actorId: user.id,
+        action: "calendar.leaveUpdated",
+        module: "calendar",
+        entityType: "DeveloperLeave",
+        entityId: leave.id,
+        metadata: { changedFields: Object.keys(input), status: leave.status }
+      });
+      return leave;
     }
 
-    if (input.developerId) await assertActiveUser(input.developerId);
-    const approvalData =
-      isManager && input.status === "APPROVED"
-        ? { approvedBy: input.approvedBy ?? user.id, approvedAt: input.approvedAt ?? new Date() }
-        : input.status && input.status !== "APPROVED"
-          ? { approvedBy: null, approvedAt: null }
-          : {};
+    if (requestedStatus !== "APPROVED" && requestedStatus !== "REJECTED" && requestedStatus !== "CANCELLED") {
+      throw new ApiError(403, "FORBIDDEN", "Only approval, rejection, or cancellation is allowed here");
+    }
 
-    const allowedInput = isManager ? input : { ...input, developerId: undefined, status: existing.status };
+    if (requestedStatus === "CANCELLED") {
+      if (existing.developerId !== user.id && !isAdmin(user)) throw new ApiError(403, "FORBIDDEN", "Only requester or admin can cancel leave");
+      return prisma.developerLeave.update({
+        where: { id },
+        data: { status: "CANCELLED", updatedBy: user.id }
+      });
+    }
+
+    const approvalData: Record<string, unknown> = {};
+
+    if (isAdmin(user)) {
+      if (hierarchy.adminRequired) {
+        approvalData.adminApprovalStatus = requestedStatus;
+        approvalData.adminApprovedBy = user.id;
+        approvalData.adminApprovedAt = now;
+        approvalData.adminApprovalNote = approvalNote;
+      } else {
+        if (existing.teamLeaderApprovalStatus === "PENDING") {
+          approvalData.teamLeaderApprovalStatus = requestedStatus;
+          approvalData.teamLeaderApprovedBy = user.id;
+          approvalData.teamLeaderApprovedAt = now;
+          approvalData.teamLeaderApprovalNote = approvalNote;
+        }
+        if (existing.projectManagerApprovalStatus === "PENDING") {
+          approvalData.projectManagerApprovalStatus = requestedStatus;
+          approvalData.projectManagerApprovedBy = user.id;
+          approvalData.projectManagerApprovedAt = now;
+          approvalData.projectManagerApprovalNote = approvalNote;
+        }
+      }
+    } else if (isProjectManager(user) && hierarchy.projectManagerRequired && hierarchy.projectManagerId === user.id) {
+      approvalData.projectManagerApprovalStatus = requestedStatus;
+      approvalData.projectManagerApprovedBy = user.id;
+      approvalData.projectManagerApprovedAt = now;
+      approvalData.projectManagerApprovalNote = approvalNote;
+    } else if (isTeamLeader(user) && hierarchy.teamLeaderRequired && hierarchy.teamLeaderId === user.id) {
+      approvalData.teamLeaderApprovalStatus = requestedStatus;
+      approvalData.teamLeaderApprovedBy = user.id;
+      approvalData.teamLeaderApprovedAt = now;
+      approvalData.teamLeaderApprovalNote = approvalNote;
+    } else {
+      throw new ApiError(403, "FORBIDDEN", "You are not an approver for this leave request");
+    }
+
+    const nextApprovalState = {
+      teamLeaderApprovalStatus: String(approvalData.teamLeaderApprovalStatus ?? existing.teamLeaderApprovalStatus),
+      projectManagerApprovalStatus: String(approvalData.projectManagerApprovalStatus ?? existing.projectManagerApprovalStatus),
+      adminApprovalStatus: String(approvalData.adminApprovalStatus ?? existing.adminApprovalStatus)
+    };
+    const nextStatus = finalLeaveStatus(nextApprovalState);
     const leave = await prisma.developerLeave.update({
       where: { id },
-      data: { ...allowedInput, ...approvalData, updatedBy: user.id }
+      data: {
+        ...approvalData,
+        status: nextStatus,
+        approvedBy: nextStatus === "APPROVED" ? user.id : null,
+        approvedAt: nextStatus === "APPROVED" ? now : null,
+        updatedBy: user.id
+      }
     });
 
     await activityLogService.create({
@@ -487,7 +696,7 @@ export const calendarService = {
     const existing = await prisma.developerLeave.findFirst({ where: { id, deletedAt: null } });
     if (!existing) throw new ApiError(404, "LEAVE_NOT_FOUND", "Leave request not found");
 
-    if (!canManagePeople(user) && existing.developerId !== user.id) {
+    if (!isAdmin(user) && existing.developerId !== user.id) {
       throw new ApiError(403, "FORBIDDEN", "You can only delete your own leave request");
     }
 
@@ -588,13 +797,15 @@ export const calendarService = {
   async getAvailability(query: CalendarQuery, user: AuthUser) {
     const { fromDate, toDate } = dateRange(query);
     const requestedDeveloperId = typeof query.developerId === "string" ? query.developerId : undefined;
-    const developerId = canManagePeople(user) ? requestedDeveloperId : user.id;
+    const visibleDeveloperIds = await managedDeveloperIds(user);
+    const developerId = requestedDeveloperId ?? (!canManagePeople(user) ? user.id : undefined);
 
     const [developers, leaves, holidays] = await Promise.all([
       prisma.user.findMany({
         where: {
           deletedAt: null,
           isActive: true,
+          ...(visibleDeveloperIds ? { id: { in: visibleDeveloperIds } } : {}),
           ...(developerId ? { id: developerId } : {}),
           developerProfile: { is: { deletedAt: null, isActive: true } }
         },
@@ -608,6 +819,7 @@ export const calendarService = {
           deletedAt: null,
           isActive: true,
           status: "APPROVED",
+          ...(visibleDeveloperIds ? { developerId: { in: visibleDeveloperIds } } : {}),
           ...(developerId ? { developerId } : {}),
           startDate: { lte: toDate },
           endDate: { gte: fromDate }

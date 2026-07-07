@@ -17,8 +17,8 @@ export const userController = {
     res.status(201).json({ success: true, data });
   }),
 
-  list: asyncHandler(async (_req: Request, res: Response) => {
-    const data = await userService.listUsers();
+  list: asyncHandler(async (req: Request, res: Response) => {
+    const data = await userService.listUsers(req.user!);
     res.json({ success: true, data });
   }),
 

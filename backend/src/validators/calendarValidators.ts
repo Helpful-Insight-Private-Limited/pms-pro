@@ -31,7 +31,8 @@ const developerLeaveBaseSchema = z.object({
   status: z.enum(["PENDING", "APPROVED", "REJECTED", "CANCELLED"]).optional(),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
-  reason: nullableText
+  reason: nullableText,
+  approvalNote: nullableText
 });
 
 export const developerLeaveSchema = developerLeaveBaseSchema.refine((value) => value.startDate <= value.endDate, {

@@ -443,6 +443,16 @@ export const LeaveStatus: {
 
 export type LeaveStatus = (typeof LeaveStatus)[keyof typeof LeaveStatus]
 
+
+export const LeaveApprovalStatus: {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  NOT_REQUIRED: 'NOT_REQUIRED'
+};
+
+export type LeaveApprovalStatus = (typeof LeaveApprovalStatus)[keyof typeof LeaveApprovalStatus]
+
 }
 
 export type UserStatus = $Enums.UserStatus
@@ -528,6 +538,10 @@ export const LeaveType: typeof $Enums.LeaveType
 export type LeaveStatus = $Enums.LeaveStatus
 
 export const LeaveStatus: typeof $Enums.LeaveStatus
+
+export type LeaveApprovalStatus = $Enums.LeaveApprovalStatus
+
+export const LeaveApprovalStatus: typeof $Enums.LeaveApprovalStatus
 
 /**
  * ##  Prisma Client ʲˢ
@@ -45992,6 +46006,18 @@ export namespace Prisma {
     startDate: Date | null
     endDate: Date | null
     reason: string | null
+    teamLeaderApprovalStatus: $Enums.LeaveApprovalStatus | null
+    teamLeaderApprovedBy: string | null
+    teamLeaderApprovalNote: string | null
+    teamLeaderApprovedAt: Date | null
+    projectManagerApprovalStatus: $Enums.LeaveApprovalStatus | null
+    projectManagerApprovedBy: string | null
+    projectManagerApprovalNote: string | null
+    projectManagerApprovedAt: Date | null
+    adminApprovalStatus: $Enums.LeaveApprovalStatus | null
+    adminApprovedBy: string | null
+    adminApprovalNote: string | null
+    adminApprovedAt: Date | null
     approvedBy: string | null
     approvedAt: Date | null
     createdBy: string | null
@@ -46010,6 +46036,18 @@ export namespace Prisma {
     startDate: Date | null
     endDate: Date | null
     reason: string | null
+    teamLeaderApprovalStatus: $Enums.LeaveApprovalStatus | null
+    teamLeaderApprovedBy: string | null
+    teamLeaderApprovalNote: string | null
+    teamLeaderApprovedAt: Date | null
+    projectManagerApprovalStatus: $Enums.LeaveApprovalStatus | null
+    projectManagerApprovedBy: string | null
+    projectManagerApprovalNote: string | null
+    projectManagerApprovedAt: Date | null
+    adminApprovalStatus: $Enums.LeaveApprovalStatus | null
+    adminApprovedBy: string | null
+    adminApprovalNote: string | null
+    adminApprovedAt: Date | null
     approvedBy: string | null
     approvedAt: Date | null
     createdBy: string | null
@@ -46028,6 +46066,18 @@ export namespace Prisma {
     startDate: number
     endDate: number
     reason: number
+    teamLeaderApprovalStatus: number
+    teamLeaderApprovedBy: number
+    teamLeaderApprovalNote: number
+    teamLeaderApprovedAt: number
+    projectManagerApprovalStatus: number
+    projectManagerApprovedBy: number
+    projectManagerApprovalNote: number
+    projectManagerApprovedAt: number
+    adminApprovalStatus: number
+    adminApprovedBy: number
+    adminApprovalNote: number
+    adminApprovedAt: number
     approvedBy: number
     approvedAt: number
     createdBy: number
@@ -46048,6 +46098,18 @@ export namespace Prisma {
     startDate?: true
     endDate?: true
     reason?: true
+    teamLeaderApprovalStatus?: true
+    teamLeaderApprovedBy?: true
+    teamLeaderApprovalNote?: true
+    teamLeaderApprovedAt?: true
+    projectManagerApprovalStatus?: true
+    projectManagerApprovedBy?: true
+    projectManagerApprovalNote?: true
+    projectManagerApprovedAt?: true
+    adminApprovalStatus?: true
+    adminApprovedBy?: true
+    adminApprovalNote?: true
+    adminApprovedAt?: true
     approvedBy?: true
     approvedAt?: true
     createdBy?: true
@@ -46066,6 +46128,18 @@ export namespace Prisma {
     startDate?: true
     endDate?: true
     reason?: true
+    teamLeaderApprovalStatus?: true
+    teamLeaderApprovedBy?: true
+    teamLeaderApprovalNote?: true
+    teamLeaderApprovedAt?: true
+    projectManagerApprovalStatus?: true
+    projectManagerApprovedBy?: true
+    projectManagerApprovalNote?: true
+    projectManagerApprovedAt?: true
+    adminApprovalStatus?: true
+    adminApprovedBy?: true
+    adminApprovalNote?: true
+    adminApprovedAt?: true
     approvedBy?: true
     approvedAt?: true
     createdBy?: true
@@ -46084,6 +46158,18 @@ export namespace Prisma {
     startDate?: true
     endDate?: true
     reason?: true
+    teamLeaderApprovalStatus?: true
+    teamLeaderApprovedBy?: true
+    teamLeaderApprovalNote?: true
+    teamLeaderApprovedAt?: true
+    projectManagerApprovalStatus?: true
+    projectManagerApprovedBy?: true
+    projectManagerApprovalNote?: true
+    projectManagerApprovedAt?: true
+    adminApprovalStatus?: true
+    adminApprovedBy?: true
+    adminApprovalNote?: true
+    adminApprovedAt?: true
     approvedBy?: true
     approvedAt?: true
     createdBy?: true
@@ -46175,6 +46261,18 @@ export namespace Prisma {
     startDate: Date
     endDate: Date
     reason: string | null
+    teamLeaderApprovalStatus: $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy: string | null
+    teamLeaderApprovalNote: string | null
+    teamLeaderApprovedAt: Date | null
+    projectManagerApprovalStatus: $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy: string | null
+    projectManagerApprovalNote: string | null
+    projectManagerApprovedAt: Date | null
+    adminApprovalStatus: $Enums.LeaveApprovalStatus
+    adminApprovedBy: string | null
+    adminApprovalNote: string | null
+    adminApprovedAt: Date | null
     approvedBy: string | null
     approvedAt: Date | null
     createdBy: string | null
@@ -46210,6 +46308,18 @@ export namespace Prisma {
     startDate?: boolean
     endDate?: boolean
     reason?: boolean
+    teamLeaderApprovalStatus?: boolean
+    teamLeaderApprovedBy?: boolean
+    teamLeaderApprovalNote?: boolean
+    teamLeaderApprovedAt?: boolean
+    projectManagerApprovalStatus?: boolean
+    projectManagerApprovedBy?: boolean
+    projectManagerApprovalNote?: boolean
+    projectManagerApprovedAt?: boolean
+    adminApprovalStatus?: boolean
+    adminApprovedBy?: boolean
+    adminApprovalNote?: boolean
+    adminApprovedAt?: boolean
     approvedBy?: boolean
     approvedAt?: boolean
     createdBy?: boolean
@@ -46231,6 +46341,18 @@ export namespace Prisma {
     startDate?: boolean
     endDate?: boolean
     reason?: boolean
+    teamLeaderApprovalStatus?: boolean
+    teamLeaderApprovedBy?: boolean
+    teamLeaderApprovalNote?: boolean
+    teamLeaderApprovedAt?: boolean
+    projectManagerApprovalStatus?: boolean
+    projectManagerApprovedBy?: boolean
+    projectManagerApprovalNote?: boolean
+    projectManagerApprovedAt?: boolean
+    adminApprovalStatus?: boolean
+    adminApprovedBy?: boolean
+    adminApprovalNote?: boolean
+    adminApprovedAt?: boolean
     approvedBy?: boolean
     approvedAt?: boolean
     createdBy?: boolean
@@ -46241,7 +46363,7 @@ export namespace Prisma {
     isActive?: boolean
   }
 
-  export type DeveloperLeaveOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "developerId" | "type" | "status" | "startDate" | "endDate" | "reason" | "approvedBy" | "approvedAt" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt" | "deletedAt" | "isActive", ExtArgs["result"]["developerLeave"]>
+  export type DeveloperLeaveOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "developerId" | "type" | "status" | "startDate" | "endDate" | "reason" | "teamLeaderApprovalStatus" | "teamLeaderApprovedBy" | "teamLeaderApprovalNote" | "teamLeaderApprovedAt" | "projectManagerApprovalStatus" | "projectManagerApprovedBy" | "projectManagerApprovalNote" | "projectManagerApprovedAt" | "adminApprovalStatus" | "adminApprovedBy" | "adminApprovalNote" | "adminApprovedAt" | "approvedBy" | "approvedAt" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt" | "deletedAt" | "isActive", ExtArgs["result"]["developerLeave"]>
   export type DeveloperLeaveInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     developer?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -46259,6 +46381,18 @@ export namespace Prisma {
       startDate: Date
       endDate: Date
       reason: string | null
+      teamLeaderApprovalStatus: $Enums.LeaveApprovalStatus
+      teamLeaderApprovedBy: string | null
+      teamLeaderApprovalNote: string | null
+      teamLeaderApprovedAt: Date | null
+      projectManagerApprovalStatus: $Enums.LeaveApprovalStatus
+      projectManagerApprovedBy: string | null
+      projectManagerApprovalNote: string | null
+      projectManagerApprovedAt: Date | null
+      adminApprovalStatus: $Enums.LeaveApprovalStatus
+      adminApprovedBy: string | null
+      adminApprovalNote: string | null
+      adminApprovedAt: Date | null
       approvedBy: string | null
       approvedAt: Date | null
       createdBy: string | null
@@ -46644,6 +46778,18 @@ export namespace Prisma {
     readonly startDate: FieldRef<"DeveloperLeave", 'DateTime'>
     readonly endDate: FieldRef<"DeveloperLeave", 'DateTime'>
     readonly reason: FieldRef<"DeveloperLeave", 'String'>
+    readonly teamLeaderApprovalStatus: FieldRef<"DeveloperLeave", 'LeaveApprovalStatus'>
+    readonly teamLeaderApprovedBy: FieldRef<"DeveloperLeave", 'String'>
+    readonly teamLeaderApprovalNote: FieldRef<"DeveloperLeave", 'String'>
+    readonly teamLeaderApprovedAt: FieldRef<"DeveloperLeave", 'DateTime'>
+    readonly projectManagerApprovalStatus: FieldRef<"DeveloperLeave", 'LeaveApprovalStatus'>
+    readonly projectManagerApprovedBy: FieldRef<"DeveloperLeave", 'String'>
+    readonly projectManagerApprovalNote: FieldRef<"DeveloperLeave", 'String'>
+    readonly projectManagerApprovedAt: FieldRef<"DeveloperLeave", 'DateTime'>
+    readonly adminApprovalStatus: FieldRef<"DeveloperLeave", 'LeaveApprovalStatus'>
+    readonly adminApprovedBy: FieldRef<"DeveloperLeave", 'String'>
+    readonly adminApprovalNote: FieldRef<"DeveloperLeave", 'String'>
+    readonly adminApprovedAt: FieldRef<"DeveloperLeave", 'DateTime'>
     readonly approvedBy: FieldRef<"DeveloperLeave", 'String'>
     readonly approvedAt: FieldRef<"DeveloperLeave", 'DateTime'>
     readonly createdBy: FieldRef<"DeveloperLeave", 'String'>
@@ -48683,6 +48829,18 @@ export namespace Prisma {
     startDate: 'startDate',
     endDate: 'endDate',
     reason: 'reason',
+    teamLeaderApprovalStatus: 'teamLeaderApprovalStatus',
+    teamLeaderApprovedBy: 'teamLeaderApprovedBy',
+    teamLeaderApprovalNote: 'teamLeaderApprovalNote',
+    teamLeaderApprovedAt: 'teamLeaderApprovedAt',
+    projectManagerApprovalStatus: 'projectManagerApprovalStatus',
+    projectManagerApprovedBy: 'projectManagerApprovedBy',
+    projectManagerApprovalNote: 'projectManagerApprovalNote',
+    projectManagerApprovedAt: 'projectManagerApprovedAt',
+    adminApprovalStatus: 'adminApprovalStatus',
+    adminApprovedBy: 'adminApprovedBy',
+    adminApprovalNote: 'adminApprovalNote',
+    adminApprovedAt: 'adminApprovedAt',
     approvedBy: 'approvedBy',
     approvedAt: 'approvedAt',
     createdBy: 'createdBy',
@@ -49233,6 +49391,12 @@ export namespace Prisma {
     id: 'id',
     developerId: 'developerId',
     reason: 'reason',
+    teamLeaderApprovedBy: 'teamLeaderApprovedBy',
+    teamLeaderApprovalNote: 'teamLeaderApprovalNote',
+    projectManagerApprovedBy: 'projectManagerApprovedBy',
+    projectManagerApprovalNote: 'projectManagerApprovalNote',
+    adminApprovedBy: 'adminApprovedBy',
+    adminApprovalNote: 'adminApprovalNote',
     approvedBy: 'approvedBy',
     createdBy: 'createdBy',
     updatedBy: 'updatedBy'
@@ -49451,6 +49615,13 @@ export namespace Prisma {
    * Reference to a field of type 'LeaveStatus'
    */
   export type EnumLeaveStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LeaveStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'LeaveApprovalStatus'
+   */
+  export type EnumLeaveApprovalStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LeaveApprovalStatus'>
     
 
 
@@ -53230,6 +53401,18 @@ export namespace Prisma {
     startDate?: DateTimeFilter<"DeveloperLeave"> | Date | string
     endDate?: DateTimeFilter<"DeveloperLeave"> | Date | string
     reason?: StringNullableFilter<"DeveloperLeave"> | string | null
+    teamLeaderApprovalStatus?: EnumLeaveApprovalStatusFilter<"DeveloperLeave"> | $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: StringNullableFilter<"DeveloperLeave"> | string | null
+    teamLeaderApprovalNote?: StringNullableFilter<"DeveloperLeave"> | string | null
+    teamLeaderApprovedAt?: DateTimeNullableFilter<"DeveloperLeave"> | Date | string | null
+    projectManagerApprovalStatus?: EnumLeaveApprovalStatusFilter<"DeveloperLeave"> | $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: StringNullableFilter<"DeveloperLeave"> | string | null
+    projectManagerApprovalNote?: StringNullableFilter<"DeveloperLeave"> | string | null
+    projectManagerApprovedAt?: DateTimeNullableFilter<"DeveloperLeave"> | Date | string | null
+    adminApprovalStatus?: EnumLeaveApprovalStatusFilter<"DeveloperLeave"> | $Enums.LeaveApprovalStatus
+    adminApprovedBy?: StringNullableFilter<"DeveloperLeave"> | string | null
+    adminApprovalNote?: StringNullableFilter<"DeveloperLeave"> | string | null
+    adminApprovedAt?: DateTimeNullableFilter<"DeveloperLeave"> | Date | string | null
     approvedBy?: StringNullableFilter<"DeveloperLeave"> | string | null
     approvedAt?: DateTimeNullableFilter<"DeveloperLeave"> | Date | string | null
     createdBy?: StringNullableFilter<"DeveloperLeave"> | string | null
@@ -53249,6 +53432,18 @@ export namespace Prisma {
     startDate?: SortOrder
     endDate?: SortOrder
     reason?: SortOrderInput | SortOrder
+    teamLeaderApprovalStatus?: SortOrder
+    teamLeaderApprovedBy?: SortOrderInput | SortOrder
+    teamLeaderApprovalNote?: SortOrderInput | SortOrder
+    teamLeaderApprovedAt?: SortOrderInput | SortOrder
+    projectManagerApprovalStatus?: SortOrder
+    projectManagerApprovedBy?: SortOrderInput | SortOrder
+    projectManagerApprovalNote?: SortOrderInput | SortOrder
+    projectManagerApprovedAt?: SortOrderInput | SortOrder
+    adminApprovalStatus?: SortOrder
+    adminApprovedBy?: SortOrderInput | SortOrder
+    adminApprovalNote?: SortOrderInput | SortOrder
+    adminApprovedAt?: SortOrderInput | SortOrder
     approvedBy?: SortOrderInput | SortOrder
     approvedAt?: SortOrderInput | SortOrder
     createdBy?: SortOrderInput | SortOrder
@@ -53272,6 +53467,18 @@ export namespace Prisma {
     startDate?: DateTimeFilter<"DeveloperLeave"> | Date | string
     endDate?: DateTimeFilter<"DeveloperLeave"> | Date | string
     reason?: StringNullableFilter<"DeveloperLeave"> | string | null
+    teamLeaderApprovalStatus?: EnumLeaveApprovalStatusFilter<"DeveloperLeave"> | $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: StringNullableFilter<"DeveloperLeave"> | string | null
+    teamLeaderApprovalNote?: StringNullableFilter<"DeveloperLeave"> | string | null
+    teamLeaderApprovedAt?: DateTimeNullableFilter<"DeveloperLeave"> | Date | string | null
+    projectManagerApprovalStatus?: EnumLeaveApprovalStatusFilter<"DeveloperLeave"> | $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: StringNullableFilter<"DeveloperLeave"> | string | null
+    projectManagerApprovalNote?: StringNullableFilter<"DeveloperLeave"> | string | null
+    projectManagerApprovedAt?: DateTimeNullableFilter<"DeveloperLeave"> | Date | string | null
+    adminApprovalStatus?: EnumLeaveApprovalStatusFilter<"DeveloperLeave"> | $Enums.LeaveApprovalStatus
+    adminApprovedBy?: StringNullableFilter<"DeveloperLeave"> | string | null
+    adminApprovalNote?: StringNullableFilter<"DeveloperLeave"> | string | null
+    adminApprovedAt?: DateTimeNullableFilter<"DeveloperLeave"> | Date | string | null
     approvedBy?: StringNullableFilter<"DeveloperLeave"> | string | null
     approvedAt?: DateTimeNullableFilter<"DeveloperLeave"> | Date | string | null
     createdBy?: StringNullableFilter<"DeveloperLeave"> | string | null
@@ -53291,6 +53498,18 @@ export namespace Prisma {
     startDate?: SortOrder
     endDate?: SortOrder
     reason?: SortOrderInput | SortOrder
+    teamLeaderApprovalStatus?: SortOrder
+    teamLeaderApprovedBy?: SortOrderInput | SortOrder
+    teamLeaderApprovalNote?: SortOrderInput | SortOrder
+    teamLeaderApprovedAt?: SortOrderInput | SortOrder
+    projectManagerApprovalStatus?: SortOrder
+    projectManagerApprovedBy?: SortOrderInput | SortOrder
+    projectManagerApprovalNote?: SortOrderInput | SortOrder
+    projectManagerApprovedAt?: SortOrderInput | SortOrder
+    adminApprovalStatus?: SortOrder
+    adminApprovedBy?: SortOrderInput | SortOrder
+    adminApprovalNote?: SortOrderInput | SortOrder
+    adminApprovedAt?: SortOrderInput | SortOrder
     approvedBy?: SortOrderInput | SortOrder
     approvedAt?: SortOrderInput | SortOrder
     createdBy?: SortOrderInput | SortOrder
@@ -53315,6 +53534,18 @@ export namespace Prisma {
     startDate?: DateTimeWithAggregatesFilter<"DeveloperLeave"> | Date | string
     endDate?: DateTimeWithAggregatesFilter<"DeveloperLeave"> | Date | string
     reason?: StringNullableWithAggregatesFilter<"DeveloperLeave"> | string | null
+    teamLeaderApprovalStatus?: EnumLeaveApprovalStatusWithAggregatesFilter<"DeveloperLeave"> | $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: StringNullableWithAggregatesFilter<"DeveloperLeave"> | string | null
+    teamLeaderApprovalNote?: StringNullableWithAggregatesFilter<"DeveloperLeave"> | string | null
+    teamLeaderApprovedAt?: DateTimeNullableWithAggregatesFilter<"DeveloperLeave"> | Date | string | null
+    projectManagerApprovalStatus?: EnumLeaveApprovalStatusWithAggregatesFilter<"DeveloperLeave"> | $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: StringNullableWithAggregatesFilter<"DeveloperLeave"> | string | null
+    projectManagerApprovalNote?: StringNullableWithAggregatesFilter<"DeveloperLeave"> | string | null
+    projectManagerApprovedAt?: DateTimeNullableWithAggregatesFilter<"DeveloperLeave"> | Date | string | null
+    adminApprovalStatus?: EnumLeaveApprovalStatusWithAggregatesFilter<"DeveloperLeave"> | $Enums.LeaveApprovalStatus
+    adminApprovedBy?: StringNullableWithAggregatesFilter<"DeveloperLeave"> | string | null
+    adminApprovalNote?: StringNullableWithAggregatesFilter<"DeveloperLeave"> | string | null
+    adminApprovedAt?: DateTimeNullableWithAggregatesFilter<"DeveloperLeave"> | Date | string | null
     approvedBy?: StringNullableWithAggregatesFilter<"DeveloperLeave"> | string | null
     approvedAt?: DateTimeNullableWithAggregatesFilter<"DeveloperLeave"> | Date | string | null
     createdBy?: StringNullableWithAggregatesFilter<"DeveloperLeave"> | string | null
@@ -57623,6 +57854,18 @@ export namespace Prisma {
     startDate: Date | string
     endDate: Date | string
     reason?: string | null
+    teamLeaderApprovalStatus?: $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: string | null
+    teamLeaderApprovalNote?: string | null
+    teamLeaderApprovedAt?: Date | string | null
+    projectManagerApprovalStatus?: $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: string | null
+    projectManagerApprovalNote?: string | null
+    projectManagerApprovedAt?: Date | string | null
+    adminApprovalStatus?: $Enums.LeaveApprovalStatus
+    adminApprovedBy?: string | null
+    adminApprovalNote?: string | null
+    adminApprovedAt?: Date | string | null
     approvedBy?: string | null
     approvedAt?: Date | string | null
     createdBy?: string | null
@@ -57642,6 +57885,18 @@ export namespace Prisma {
     startDate: Date | string
     endDate: Date | string
     reason?: string | null
+    teamLeaderApprovalStatus?: $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: string | null
+    teamLeaderApprovalNote?: string | null
+    teamLeaderApprovedAt?: Date | string | null
+    projectManagerApprovalStatus?: $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: string | null
+    projectManagerApprovalNote?: string | null
+    projectManagerApprovedAt?: Date | string | null
+    adminApprovalStatus?: $Enums.LeaveApprovalStatus
+    adminApprovedBy?: string | null
+    adminApprovalNote?: string | null
+    adminApprovedAt?: Date | string | null
     approvedBy?: string | null
     approvedAt?: Date | string | null
     createdBy?: string | null
@@ -57659,6 +57914,18 @@ export namespace Prisma {
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    projectManagerApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    adminApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    adminApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdBy?: NullableStringFieldUpdateOperationsInput | string | null
@@ -57678,6 +57945,18 @@ export namespace Prisma {
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    projectManagerApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    adminApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    adminApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdBy?: NullableStringFieldUpdateOperationsInput | string | null
@@ -57696,6 +57975,18 @@ export namespace Prisma {
     startDate: Date | string
     endDate: Date | string
     reason?: string | null
+    teamLeaderApprovalStatus?: $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: string | null
+    teamLeaderApprovalNote?: string | null
+    teamLeaderApprovedAt?: Date | string | null
+    projectManagerApprovalStatus?: $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: string | null
+    projectManagerApprovalNote?: string | null
+    projectManagerApprovedAt?: Date | string | null
+    adminApprovalStatus?: $Enums.LeaveApprovalStatus
+    adminApprovedBy?: string | null
+    adminApprovalNote?: string | null
+    adminApprovedAt?: Date | string | null
     approvedBy?: string | null
     approvedAt?: Date | string | null
     createdBy?: string | null
@@ -57713,6 +58004,18 @@ export namespace Prisma {
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    projectManagerApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    adminApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    adminApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdBy?: NullableStringFieldUpdateOperationsInput | string | null
@@ -57731,6 +58034,18 @@ export namespace Prisma {
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    projectManagerApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    adminApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    adminApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdBy?: NullableStringFieldUpdateOperationsInput | string | null
@@ -60969,6 +61284,13 @@ export namespace Prisma {
     not?: NestedEnumLeaveStatusFilter<$PrismaModel> | $Enums.LeaveStatus
   }
 
+  export type EnumLeaveApprovalStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeaveApprovalStatus | EnumLeaveApprovalStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.LeaveApprovalStatus[]
+    notIn?: $Enums.LeaveApprovalStatus[]
+    not?: NestedEnumLeaveApprovalStatusFilter<$PrismaModel> | $Enums.LeaveApprovalStatus
+  }
+
   export type DeveloperLeaveOrderByRelevanceInput = {
     fields: DeveloperLeaveOrderByRelevanceFieldEnum | DeveloperLeaveOrderByRelevanceFieldEnum[]
     sort: SortOrder
@@ -60983,6 +61305,18 @@ export namespace Prisma {
     startDate?: SortOrder
     endDate?: SortOrder
     reason?: SortOrder
+    teamLeaderApprovalStatus?: SortOrder
+    teamLeaderApprovedBy?: SortOrder
+    teamLeaderApprovalNote?: SortOrder
+    teamLeaderApprovedAt?: SortOrder
+    projectManagerApprovalStatus?: SortOrder
+    projectManagerApprovedBy?: SortOrder
+    projectManagerApprovalNote?: SortOrder
+    projectManagerApprovedAt?: SortOrder
+    adminApprovalStatus?: SortOrder
+    adminApprovedBy?: SortOrder
+    adminApprovalNote?: SortOrder
+    adminApprovedAt?: SortOrder
     approvedBy?: SortOrder
     approvedAt?: SortOrder
     createdBy?: SortOrder
@@ -61001,6 +61335,18 @@ export namespace Prisma {
     startDate?: SortOrder
     endDate?: SortOrder
     reason?: SortOrder
+    teamLeaderApprovalStatus?: SortOrder
+    teamLeaderApprovedBy?: SortOrder
+    teamLeaderApprovalNote?: SortOrder
+    teamLeaderApprovedAt?: SortOrder
+    projectManagerApprovalStatus?: SortOrder
+    projectManagerApprovedBy?: SortOrder
+    projectManagerApprovalNote?: SortOrder
+    projectManagerApprovedAt?: SortOrder
+    adminApprovalStatus?: SortOrder
+    adminApprovedBy?: SortOrder
+    adminApprovalNote?: SortOrder
+    adminApprovedAt?: SortOrder
     approvedBy?: SortOrder
     approvedAt?: SortOrder
     createdBy?: SortOrder
@@ -61019,6 +61365,18 @@ export namespace Prisma {
     startDate?: SortOrder
     endDate?: SortOrder
     reason?: SortOrder
+    teamLeaderApprovalStatus?: SortOrder
+    teamLeaderApprovedBy?: SortOrder
+    teamLeaderApprovalNote?: SortOrder
+    teamLeaderApprovedAt?: SortOrder
+    projectManagerApprovalStatus?: SortOrder
+    projectManagerApprovedBy?: SortOrder
+    projectManagerApprovalNote?: SortOrder
+    projectManagerApprovedAt?: SortOrder
+    adminApprovalStatus?: SortOrder
+    adminApprovedBy?: SortOrder
+    adminApprovalNote?: SortOrder
+    adminApprovedAt?: SortOrder
     approvedBy?: SortOrder
     approvedAt?: SortOrder
     createdBy?: SortOrder
@@ -61047,6 +61405,16 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumLeaveStatusFilter<$PrismaModel>
     _max?: NestedEnumLeaveStatusFilter<$PrismaModel>
+  }
+
+  export type EnumLeaveApprovalStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeaveApprovalStatus | EnumLeaveApprovalStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.LeaveApprovalStatus[]
+    notIn?: $Enums.LeaveApprovalStatus[]
+    not?: NestedEnumLeaveApprovalStatusWithAggregatesFilter<$PrismaModel> | $Enums.LeaveApprovalStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumLeaveApprovalStatusFilter<$PrismaModel>
+    _max?: NestedEnumLeaveApprovalStatusFilter<$PrismaModel>
   }
 
   export type HolidayOrderByRelevanceInput = {
@@ -64502,6 +64870,10 @@ export namespace Prisma {
     set?: $Enums.LeaveStatus
   }
 
+  export type EnumLeaveApprovalStatusFieldUpdateOperationsInput = {
+    set?: $Enums.LeaveApprovalStatus
+  }
+
   export type UserUpdateOneRequiredWithoutDeveloperLeavesNestedInput = {
     create?: XOR<UserCreateWithoutDeveloperLeavesInput, UserUncheckedCreateWithoutDeveloperLeavesInput>
     connectOrCreate?: UserCreateOrConnectWithoutDeveloperLeavesInput
@@ -65146,6 +65518,13 @@ export namespace Prisma {
     not?: NestedEnumLeaveStatusFilter<$PrismaModel> | $Enums.LeaveStatus
   }
 
+  export type NestedEnumLeaveApprovalStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeaveApprovalStatus | EnumLeaveApprovalStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.LeaveApprovalStatus[]
+    notIn?: $Enums.LeaveApprovalStatus[]
+    not?: NestedEnumLeaveApprovalStatusFilter<$PrismaModel> | $Enums.LeaveApprovalStatus
+  }
+
   export type NestedEnumLeaveTypeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.LeaveType | EnumLeaveTypeFieldRefInput<$PrismaModel>
     in?: $Enums.LeaveType[]
@@ -65164,6 +65543,16 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumLeaveStatusFilter<$PrismaModel>
     _max?: NestedEnumLeaveStatusFilter<$PrismaModel>
+  }
+
+  export type NestedEnumLeaveApprovalStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeaveApprovalStatus | EnumLeaveApprovalStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.LeaveApprovalStatus[]
+    notIn?: $Enums.LeaveApprovalStatus[]
+    not?: NestedEnumLeaveApprovalStatusWithAggregatesFilter<$PrismaModel> | $Enums.LeaveApprovalStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumLeaveApprovalStatusFilter<$PrismaModel>
+    _max?: NestedEnumLeaveApprovalStatusFilter<$PrismaModel>
   }
 
   export type RefreshTokenCreateWithoutUserInput = {
@@ -65976,6 +66365,18 @@ export namespace Prisma {
     startDate: Date | string
     endDate: Date | string
     reason?: string | null
+    teamLeaderApprovalStatus?: $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: string | null
+    teamLeaderApprovalNote?: string | null
+    teamLeaderApprovedAt?: Date | string | null
+    projectManagerApprovalStatus?: $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: string | null
+    projectManagerApprovalNote?: string | null
+    projectManagerApprovedAt?: Date | string | null
+    adminApprovalStatus?: $Enums.LeaveApprovalStatus
+    adminApprovedBy?: string | null
+    adminApprovalNote?: string | null
+    adminApprovedAt?: Date | string | null
     approvedBy?: string | null
     approvedAt?: Date | string | null
     createdBy?: string | null
@@ -65993,6 +66394,18 @@ export namespace Prisma {
     startDate: Date | string
     endDate: Date | string
     reason?: string | null
+    teamLeaderApprovalStatus?: $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: string | null
+    teamLeaderApprovalNote?: string | null
+    teamLeaderApprovedAt?: Date | string | null
+    projectManagerApprovalStatus?: $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: string | null
+    projectManagerApprovalNote?: string | null
+    projectManagerApprovedAt?: Date | string | null
+    adminApprovalStatus?: $Enums.LeaveApprovalStatus
+    adminApprovedBy?: string | null
+    adminApprovalNote?: string | null
+    adminApprovedAt?: Date | string | null
     approvedBy?: string | null
     approvedAt?: Date | string | null
     createdBy?: string | null
@@ -66867,6 +67280,18 @@ export namespace Prisma {
     startDate?: DateTimeFilter<"DeveloperLeave"> | Date | string
     endDate?: DateTimeFilter<"DeveloperLeave"> | Date | string
     reason?: StringNullableFilter<"DeveloperLeave"> | string | null
+    teamLeaderApprovalStatus?: EnumLeaveApprovalStatusFilter<"DeveloperLeave"> | $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: StringNullableFilter<"DeveloperLeave"> | string | null
+    teamLeaderApprovalNote?: StringNullableFilter<"DeveloperLeave"> | string | null
+    teamLeaderApprovedAt?: DateTimeNullableFilter<"DeveloperLeave"> | Date | string | null
+    projectManagerApprovalStatus?: EnumLeaveApprovalStatusFilter<"DeveloperLeave"> | $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: StringNullableFilter<"DeveloperLeave"> | string | null
+    projectManagerApprovalNote?: StringNullableFilter<"DeveloperLeave"> | string | null
+    projectManagerApprovedAt?: DateTimeNullableFilter<"DeveloperLeave"> | Date | string | null
+    adminApprovalStatus?: EnumLeaveApprovalStatusFilter<"DeveloperLeave"> | $Enums.LeaveApprovalStatus
+    adminApprovedBy?: StringNullableFilter<"DeveloperLeave"> | string | null
+    adminApprovalNote?: StringNullableFilter<"DeveloperLeave"> | string | null
+    adminApprovedAt?: DateTimeNullableFilter<"DeveloperLeave"> | Date | string | null
     approvedBy?: StringNullableFilter<"DeveloperLeave"> | string | null
     approvedAt?: DateTimeNullableFilter<"DeveloperLeave"> | Date | string | null
     createdBy?: StringNullableFilter<"DeveloperLeave"> | string | null
@@ -78679,6 +79104,18 @@ export namespace Prisma {
     startDate: Date | string
     endDate: Date | string
     reason?: string | null
+    teamLeaderApprovalStatus?: $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: string | null
+    teamLeaderApprovalNote?: string | null
+    teamLeaderApprovedAt?: Date | string | null
+    projectManagerApprovalStatus?: $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: string | null
+    projectManagerApprovalNote?: string | null
+    projectManagerApprovedAt?: Date | string | null
+    adminApprovalStatus?: $Enums.LeaveApprovalStatus
+    adminApprovedBy?: string | null
+    adminApprovalNote?: string | null
+    adminApprovedAt?: Date | string | null
     approvedBy?: string | null
     approvedAt?: Date | string | null
     createdBy?: string | null
@@ -79656,6 +80093,18 @@ export namespace Prisma {
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    projectManagerApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    adminApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    adminApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdBy?: NullableStringFieldUpdateOperationsInput | string | null
@@ -79673,6 +80122,18 @@ export namespace Prisma {
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    projectManagerApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    adminApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    adminApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdBy?: NullableStringFieldUpdateOperationsInput | string | null
@@ -79690,6 +80151,18 @@ export namespace Prisma {
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    teamLeaderApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    teamLeaderApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    projectManagerApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    projectManagerApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    projectManagerApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    adminApprovalStatus?: EnumLeaveApprovalStatusFieldUpdateOperationsInput | $Enums.LeaveApprovalStatus
+    adminApprovedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovalNote?: NullableStringFieldUpdateOperationsInput | string | null
+    adminApprovedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdBy?: NullableStringFieldUpdateOperationsInput | string | null

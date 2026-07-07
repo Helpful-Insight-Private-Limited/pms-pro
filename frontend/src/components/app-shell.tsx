@@ -19,7 +19,7 @@ const navItems = [
   { href: "/clients", label: "Clients", icon: BriefcaseBusiness, permission: "client.view" },
   { href: "/projects", label: "Projects", icon: FolderKanban, permission: "project.view" },
   { href: "/work", label: "Work", icon: ListTodo, permission: "task.view" },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays, permission: "calendar.view" },
+  { href: "/calendar", label: "Calendar", icon: CalendarDays, permissions: ["calendar.view", "leave.view", "holiday.view", "availability.view"] },
   { href: "/team", label: "Team", icon: Users, permission: "user.view" },
   { href: "/profile", label: "Profile", icon: UserCircle },
   { href: "/settings", label: "Settings", icon: Settings, permission: "role.view" }
@@ -217,7 +217,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <nav className="space-y-1 p-3">
-          {navItems.filter((item) => !item.permission || user?.permissions?.includes(item.permission)).map((item) => {
+          {navItems.filter((item) => {
+            if (!("permission" in item) && !("permissions" in item)) return true;
+            if (user?.roles.includes("admin")) return true;
+            if ("permission" in item && item.permission) return user?.permissions?.includes(item.permission);
+            if ("permissions" in item && item.permissions) return item.permissions.some((permission) => user?.permissions?.includes(permission));
+            return true;
+          }).map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
             return (

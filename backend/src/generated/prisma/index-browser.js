@@ -704,6 +704,18 @@ exports.Prisma.DeveloperLeaveScalarFieldEnum = {
   startDate: 'startDate',
   endDate: 'endDate',
   reason: 'reason',
+  teamLeaderApprovalStatus: 'teamLeaderApprovalStatus',
+  teamLeaderApprovedBy: 'teamLeaderApprovedBy',
+  teamLeaderApprovalNote: 'teamLeaderApprovalNote',
+  teamLeaderApprovedAt: 'teamLeaderApprovedAt',
+  projectManagerApprovalStatus: 'projectManagerApprovalStatus',
+  projectManagerApprovedBy: 'projectManagerApprovedBy',
+  projectManagerApprovalNote: 'projectManagerApprovalNote',
+  projectManagerApprovedAt: 'projectManagerApprovedAt',
+  adminApprovalStatus: 'adminApprovalStatus',
+  adminApprovedBy: 'adminApprovedBy',
+  adminApprovalNote: 'adminApprovalNote',
+  adminApprovedAt: 'adminApprovedAt',
   approvedBy: 'approvedBy',
   approvedAt: 'approvedAt',
   createdBy: 'createdBy',
@@ -1119,6 +1131,12 @@ exports.Prisma.DeveloperLeaveOrderByRelevanceFieldEnum = {
   id: 'id',
   developerId: 'developerId',
   reason: 'reason',
+  teamLeaderApprovedBy: 'teamLeaderApprovedBy',
+  teamLeaderApprovalNote: 'teamLeaderApprovalNote',
+  projectManagerApprovedBy: 'projectManagerApprovedBy',
+  projectManagerApprovalNote: 'projectManagerApprovalNote',
+  adminApprovedBy: 'adminApprovedBy',
+  adminApprovalNote: 'adminApprovalNote',
   approvedBy: 'approvedBy',
   createdBy: 'createdBy',
   updatedBy: 'updatedBy'
@@ -1293,6 +1311,13 @@ exports.LeaveStatus = exports.$Enums.LeaveStatus = {
   APPROVED: 'APPROVED',
   REJECTED: 'REJECTED',
   CANCELLED: 'CANCELLED'
+};
+
+exports.LeaveApprovalStatus = exports.$Enums.LeaveApprovalStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  NOT_REQUIRED: 'NOT_REQUIRED'
 };
 
 exports.Prisma.ModelName = {

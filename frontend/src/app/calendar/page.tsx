@@ -39,6 +39,12 @@ type Leave = {
   endDate: string;
   reason?: string | null;
   developer?: User;
+  teamLeaderApprovalStatus?: string;
+  teamLeaderApprovalNote?: string | null;
+  projectManagerApprovalStatus?: string;
+  projectManagerApprovalNote?: string | null;
+  adminApprovalStatus?: string;
+  adminApprovalNote?: string | null;
 };
 type Holiday = {
   id: string;
@@ -128,10 +134,18 @@ const emptyHoliday: HolidayInput & { id?: string } = {
 
 export default function CalendarPage() {
   const { user: sessionUser } = useSessionUser();
+  const isAdmin = Boolean(sessionUser?.roles.includes("admin"));
+  const isApproverRole = Boolean(sessionUser?.roles.some((role) => ["admin", "projectManager", "teamLeader"].includes(role)));
+  const hasPermission = (permission: string) => Boolean(isAdmin || sessionUser?.permissions.includes(permission));
+  const canViewCalendar = hasPermission("calendar.view");
+  const canViewLeave = hasPermission("leave.view");
+  const canViewHoliday = hasPermission("holiday.view");
+  const canViewAvailability = hasPermission("availability.view");
   const canManageCalendar = sessionUser?.permissions.includes("calendar.manage") || sessionUser?.roles.includes("admin");
   const canManageLeave = sessionUser?.permissions.includes("leave.manage") || sessionUser?.roles.includes("admin");
+  const canApproveLeave = Boolean(canManageLeave && isApproverRole);
   const canManageHoliday = sessionUser?.permissions.includes("holiday.manage") || sessionUser?.roles.includes("admin");
-  const [activeTab, setActiveTab] = useState<Tab>("events");
+  const [activeTab, setActiveTab] = useState<Tab>(canViewCalendar ? "events" : canViewLeave ? "leaves" : canViewHoliday ? "holidays" : canViewAvailability ? "availability" : "events");
   const [filters, setFilters] = useState(initialFilters);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [leaves, setLeaves] = useState<Leave[]>([]);
@@ -157,11 +171,11 @@ export default function CalendarPage() {
     setError("");
     try {
       const [eventList, leaveList, holidayList, availabilityList, workloadList] = await Promise.all([
-        api.calendar.events.list<CalendarEvent[]>(query),
-        api.calendar.leaves.list<Leave[]>(query),
-        api.calendar.holidays.list<Holiday[]>(query),
-        api.calendar.availability<Availability[]>(query),
-        api.calendar.workload<Workload[]>(query)
+        canViewCalendar ? api.calendar.events.list<CalendarEvent[]>(query) : Promise.resolve([]),
+        canViewLeave ? api.calendar.leaves.list<Leave[]>(query) : Promise.resolve([]),
+        canViewHoliday ? api.calendar.holidays.list<Holiday[]>(query) : Promise.resolve([]),
+        canViewAvailability ? api.calendar.availability<Availability[]>(query) : Promise.resolve([]),
+        canViewAvailability ? api.calendar.workload<Workload[]>(query) : Promise.resolve([])
       ]);
       setEvents(eventList);
       setLeaves(leaveList);
@@ -186,7 +200,7 @@ export default function CalendarPage() {
   useEffect(() => {
     void loadData();
     void loadUsers();
-  }, [query]);
+  }, [query, canViewCalendar, canViewLeave, canViewHoliday, canViewAvailability]);
 
   function openCreateEvent() {
     setEventForm({ ...emptyEvent, startAt: `${filters.fromDate}T10:00`, endAt: `${filters.fromDate}T11:00` });
@@ -245,7 +259,7 @@ export default function CalendarPage() {
   }
 
   function openCreateLeave() {
-    setLeaveForm({ ...emptyLeave, startDate: filters.fromDate, endDate: filters.fromDate, developerId: users[0]?.id ?? "" });
+    setLeaveForm({ ...emptyLeave, startDate: filters.fromDate, endDate: filters.fromDate, developerId: canApproveLeave ? users[0]?.id ?? "" : "" });
     setLeaveModalOpen(true);
   }
 
@@ -262,11 +276,36 @@ export default function CalendarPage() {
     setLeaveModalOpen(true);
   }
 
+  async function decideLeave(leave: Leave, status: "APPROVED" | "REJECTED") {
+    const approvalNote = window.prompt(`${status === "APPROVED" ? "Approve" : "Reject"} leave note`, "");
+    if (approvalNote === null) return;
+    setError("");
+    setNotice("");
+    try {
+      await api.calendar.leaves.update(leave.id, {
+        startDate: toDateInput(leave.startDate),
+        endDate: toDateInput(leave.endDate),
+        status,
+        approvalNote: approvalNote.trim() || null
+      });
+      setNotice(status === "APPROVED" ? "Leave approved." : "Leave rejected.");
+      await loadData();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : `Unable to ${status.toLowerCase()} leave`);
+    }
+  }
+
   async function saveLeave(formEvent: React.FormEvent<HTMLFormElement>) {
     formEvent.preventDefault();
     setError("");
     setNotice("");
-    const payload = { ...leaveForm, reason: leaveForm.reason?.trim() ? leaveForm.reason.trim() : null };
+    const payload = {
+      ...leaveForm,
+      developerId: canApproveLeave && leaveForm.developerId ? leaveForm.developerId : undefined,
+      status: canApproveLeave && leaveForm.id ? leaveForm.status : undefined,
+      approvalNote: undefined,
+      reason: leaveForm.reason?.trim() ? leaveForm.reason.trim() : null
+    };
     try {
       if (leaveForm.id) {
         await api.calendar.leaves.update(leaveForm.id, payload);
@@ -337,12 +376,18 @@ export default function CalendarPage() {
   }
 
   const tabs = [
-    { key: "events" as const, label: "Calendar", icon: CalendarDays },
-    { key: "leaves" as const, label: "Leave", icon: Clock },
-    { key: "holidays" as const, label: "Holidays", icon: CheckCircle2 },
-    { key: "availability" as const, label: "Availability", icon: Users },
-    { key: "workload" as const, label: "Workload", icon: Users }
-  ];
+    { key: "events" as const, label: "Calendar", icon: CalendarDays, visible: canViewCalendar },
+    { key: "leaves" as const, label: "Leave", icon: Clock, visible: canViewLeave },
+    { key: "holidays" as const, label: "Holidays", icon: CheckCircle2, visible: canViewHoliday },
+    { key: "availability" as const, label: "Availability", icon: Users, visible: canViewAvailability },
+    { key: "workload" as const, label: "Workload", icon: Users, visible: canViewAvailability }
+  ].filter((tab) => tab.visible);
+
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.some((tab) => tab.key === activeTab)) {
+      setActiveTab(tabs[0].key);
+    }
+  }, [activeTab, tabs]);
 
   return (
     <AppShell>
@@ -357,7 +402,7 @@ export default function CalendarPage() {
               Refresh
             </button>
             {activeTab === "events" && canManageCalendar ? <ActionButton label="Add Event" onClick={openCreateEvent} /> : null}
-            {activeTab === "leaves" && canManageLeave ? <ActionButton label="Add Leave" onClick={openCreateLeave} /> : null}
+            {activeTab === "leaves" && canViewLeave ? <ActionButton label="Request Leave" onClick={openCreateLeave} /> : null}
             {activeTab === "holidays" && canManageHoliday ? <ActionButton label="Add Holiday" onClick={openCreateHoliday} /> : null}
           </>
         }
@@ -401,7 +446,7 @@ export default function CalendarPage() {
       </div>
 
       {activeTab === "events" ? <EventsTable events={events} loading={loading} canManage={Boolean(canManageCalendar)} onView={(event) => setDetail({ kind: "event", item: event })} onEdit={openEditEvent} onDelete={deleteEvent} /> : null}
-      {activeTab === "leaves" ? <LeavesTable leaves={leaves} loading={loading} canManage={Boolean(canManageLeave)} onView={(leave) => setDetail({ kind: "leave", item: leave })} onEdit={openEditLeave} onDelete={deleteLeave} /> : null}
+      {activeTab === "leaves" ? <LeavesTable leaves={leaves} loading={loading} currentUserId={sessionUser?.id ?? ""} canApprove={canApproveLeave} onApprove={(leave) => decideLeave(leave, "APPROVED")} onReject={(leave) => decideLeave(leave, "REJECTED")} onView={(leave) => setDetail({ kind: "leave", item: leave })} onEdit={openEditLeave} onDelete={deleteLeave} /> : null}
       {activeTab === "holidays" ? <HolidaysTable holidays={holidays} loading={loading} canManage={Boolean(canManageHoliday)} onView={(holiday) => setDetail({ kind: "holiday", item: holiday })} onEdit={openEditHoliday} onDelete={deleteHoliday} /> : null}
       {activeTab === "availability" ? <AvailabilityTable rows={availability} loading={loading} /> : null}
       {activeTab === "workload" ? <WorkloadTable rows={workload} loading={loading} /> : null}
@@ -437,25 +482,25 @@ export default function CalendarPage() {
         <Modal title={leaveForm.id ? "Edit Leave" : "Add Leave"} onClose={() => setLeaveModalOpen(false)} size="small">
           <form onSubmit={saveLeave} className="flex min-h-0 flex-1 flex-col">
             <div className="grid gap-4 overflow-auto p-5 md:grid-cols-2">
-              <label className="block md:col-span-2">
+              {canApproveLeave ? <label className="block md:col-span-2">
                 <span className="mb-2 block text-sm font-medium">User</span>
                 <select value={leaveForm.developerId ?? ""} onChange={(event) => setLeaveForm({ ...leaveForm, developerId: event.target.value })} className="h-10 w-full rounded-md border border-[#d7dde8] px-3">
                   <option value="">Current user</option>
                   {users.map((user) => <option key={user.id} value={user.id}>{userName(user)} - {user.email}</option>)}
                 </select>
-              </label>
+              </label> : null}
               <label className="block">
                 <span className="mb-2 block text-sm font-medium">Type</span>
                 <select value={leaveForm.type} onChange={(event) => setLeaveForm({ ...leaveForm, type: event.target.value as LeaveType })} className="h-10 w-full rounded-md border border-[#d7dde8] px-3">
                   {leaveTypes.map((type) => <option key={type}>{type}</option>)}
                 </select>
               </label>
-              <label className="block">
+              {canApproveLeave && leaveForm.id ? <label className="block">
                 <span className="mb-2 block text-sm font-medium">Status</span>
                 <select value={leaveForm.status} onChange={(event) => setLeaveForm({ ...leaveForm, status: event.target.value as LeaveStatus })} className="h-10 w-full rounded-md border border-[#d7dde8] px-3">
                   {leaveStatuses.map((status) => <option key={status}>{status}</option>)}
                 </select>
-              </label>
+              </label> : null}
               <TextInput label="Start date" type="date" value={leaveForm.startDate} required onChange={(value) => setLeaveForm({ ...leaveForm, startDate: value })} />
               <TextInput label="End date" type="date" value={leaveForm.endDate} required onChange={(value) => setLeaveForm({ ...leaveForm, endDate: value })} />
               <label className="block md:col-span-2">
@@ -504,6 +549,9 @@ export default function CalendarPage() {
                 <DetailRow label="Type" value={detail.item.type} />
                 <DetailRow label="Status" value={detail.item.status} />
                 <DetailRow label="Dates" value={`${displayDate(detail.item.startDate)} - ${displayDate(detail.item.endDate)}`} />
+                <DetailRow label="TL Approval" value={`${detail.item.teamLeaderApprovalStatus ?? "PENDING"}${detail.item.teamLeaderApprovalNote ? ` - ${detail.item.teamLeaderApprovalNote}` : ""}`} />
+                <DetailRow label="PM Approval" value={`${detail.item.projectManagerApprovalStatus ?? "PENDING"}${detail.item.projectManagerApprovalNote ? ` - ${detail.item.projectManagerApprovalNote}` : ""}`} />
+                <DetailRow label="Admin Approval" value={`${detail.item.adminApprovalStatus ?? "NOT_REQUIRED"}${detail.item.adminApprovalNote ? ` - ${detail.item.adminApprovalNote}` : ""}`} />
                 <DetailText label="Reason" value={detail.item.reason} />
               </>
             ) : null}
@@ -633,12 +681,50 @@ function EventsTable({ events, loading, canManage, onView, onEdit, onDelete }: {
   );
 }
 
-function LeavesTable({ leaves, loading, canManage, onView, onEdit, onDelete }: { leaves: Leave[]; loading: boolean; canManage: boolean; onView: (leave: Leave) => void; onEdit: (leave: Leave) => void; onDelete: (leave: Leave) => void }) {
+function LeavesTable({
+  leaves,
+  loading,
+  currentUserId,
+  canApprove,
+  onApprove,
+  onReject,
+  onView,
+  onEdit,
+  onDelete
+}: {
+  leaves: Leave[];
+  loading: boolean;
+  currentUserId: string;
+  canApprove: boolean;
+  onApprove: (leave: Leave) => void;
+  onReject: (leave: Leave) => void;
+  onView: (leave: Leave) => void;
+  onEdit: (leave: Leave) => void;
+  onDelete: (leave: Leave) => void;
+}) {
   return (
     <DataShell title={loading ? "Loading leave" : `${leaves.length} leave requests`} subtitle="Approved and pending leave by user">
       <table className="w-full min-w-[880px] border-collapse text-left text-sm">
         <thead className="bg-[#f8fafc] text-[#667085]"><tr><th className="border-b border-[#d7dde8] px-4 py-3">User</th><th className="border-b border-[#d7dde8] px-4 py-3">Type</th><th className="border-b border-[#d7dde8] px-4 py-3">Dates</th><th className="border-b border-[#d7dde8] px-4 py-3">Status</th><th className="border-b border-[#d7dde8] px-4 py-3 text-right">Actions</th></tr></thead>
-        <tbody>{leaves.map((leave) => <tr key={leave.id} onClick={() => onView(leave)} className="cursor-pointer hover:bg-[#fbfcff]"><td className="border-b border-[#edf1f7] px-4 py-4"><div className="font-semibold text-[#111827]">{userName(leave.developer)}</div><div className="text-xs text-[#667085]">{leave.reason ?? ""}</div></td><td className="border-b border-[#edf1f7] px-4 py-4 text-[#667085]">{leave.type}</td><td className="border-b border-[#edf1f7] px-4 py-4 text-[#667085]">{displayDate(leave.startDate)} - {displayDate(leave.endDate)}</td><td className="border-b border-[#edf1f7] px-4 py-4"><StatusBadge value={leave.status} /></td><td className="border-b border-[#edf1f7] px-4 py-4" onClick={(clickEvent) => clickEvent.stopPropagation()}><RowActions disabled={!canManage} onEdit={() => onEdit(leave)} onDelete={() => onDelete(leave)} /></td></tr>)}</tbody>
+        <tbody>{leaves.map((leave) => {
+          const canEditOwnPending = leave.developerId === currentUserId && leave.status === "PENDING";
+          const canDecide = canApprove && leave.status === "PENDING";
+          return (
+            <tr key={leave.id} onClick={() => onView(leave)} className="cursor-pointer hover:bg-[#fbfcff]">
+              <td className="border-b border-[#edf1f7] px-4 py-4"><div className="font-semibold text-[#111827]">{userName(leave.developer)}</div><div className="text-xs text-[#667085]">{leave.reason ?? ""}</div></td>
+              <td className="border-b border-[#edf1f7] px-4 py-4 text-[#667085]">{leave.type}</td>
+              <td className="border-b border-[#edf1f7] px-4 py-4 text-[#667085]">{displayDate(leave.startDate)} - {displayDate(leave.endDate)}</td>
+              <td className="border-b border-[#edf1f7] px-4 py-4"><StatusBadge value={leave.status} /></td>
+              <td className="border-b border-[#edf1f7] px-4 py-4" onClick={(clickEvent) => clickEvent.stopPropagation()}>
+                <div className="flex justify-end gap-2">
+                  {canDecide ? <button type="button" onClick={() => onApprove(leave)} className="h-9 rounded-md bg-[#137333] px-3 text-xs font-semibold text-white">Approve</button> : null}
+                  {canDecide ? <button type="button" onClick={() => onReject(leave)} className="h-9 rounded-md bg-[#b42318] px-3 text-xs font-semibold text-white">Reject</button> : null}
+                  {canEditOwnPending ? <RowActions onEdit={() => onEdit(leave)} onDelete={() => onDelete(leave)} /> : null}
+                </div>
+              </td>
+            </tr>
+          );
+        })}</tbody>
       </table>
       {!leaves.length && !loading ? <EmptyState label="No leave requests found for this date range." /> : null}
     </DataShell>
