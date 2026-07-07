@@ -1,5 +1,32 @@
 import { prisma } from "../dist/src/prisma/client.js";
-import { hashPassword } from "../dist/src/utils/password.js";
+import { randomBytes, scrypt as scryptCallback } from "node:crypto";
+
+const scryptOptions = {
+  N: 16384,
+  r: 8,
+  p: 1,
+  maxmem: 64 * 1024 * 1024
+};
+
+function scrypt(password, salt, length, options) {
+  return new Promise((resolve, reject) => {
+    scryptCallback(password, salt, length, options, (error, derivedKey) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve(derivedKey);
+    });
+  });
+}
+
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString("base64url");
+  const derivedKey = await scrypt(password, salt, 64, scryptOptions);
+
+  return `scrypt$${scryptOptions.N}$${scryptOptions.r}$${scryptOptions.p}$${salt}$${derivedKey.toString("base64url")}`;
+}
 
 const email = process.env.USER_EMAIL;
 const password = process.env.NEW_PASSWORD;

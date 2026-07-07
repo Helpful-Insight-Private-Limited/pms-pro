@@ -72,6 +72,7 @@ If you cannot remove files on shared hosting, delete `node_modules/argon2` from 
 If this server already had users created with the old native `argon2` password hashes, reset those passwords after the backend build:
 
 ```bash
+npm --workspace backend run build
 USER_EMAIL=admin@example.com NEW_PASSWORD='ChangeMeStrong123' npm --workspace backend run user:reset-password
 ```
 
