@@ -4,6 +4,7 @@ import { notificationRepository } from "../repositories/notificationRepository.j
 import { emitToUser } from "../realtime/socket.js";
 import { ApiError } from "../utils/apiError.js";
 import { emailService } from "./emailService.js";
+import { pushNotificationService } from "./pushNotificationService.js";
 import type { AuthUser } from "../types/auth.js";
 
 type NotificationType =
@@ -180,6 +181,15 @@ export const notificationService = {
         });
         notifications.push(notification);
         emitToUser(user.id, "notification.created", notification);
+        void pushNotificationService.sendToUser(user.id, {
+          id: notification.id,
+          title: notification.title,
+          body: notification.message,
+          type: notification.type,
+          entityType: notification.entityType,
+          entityId: notification.entityId,
+          metadata: notification.metadata
+        });
       }
 
       if (input.sendEmail && await isChannelEnabled(user.id, type, "EMAIL")) {

@@ -46,3 +46,16 @@ export const createDomainNotificationSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
   sendEmail: z.boolean().default(false)
 });
+
+export const pushSubscriptionSchema = z.object({
+  endpoint: z.string().url().max(700),
+  expirationTime: z.number().nullable().optional(),
+  keys: z.object({
+    p256dh: z.string().min(1).max(255),
+    auth: z.string().min(1).max(255)
+  })
+});
+
+export const unsubscribePushSubscriptionSchema = z.object({
+  endpoint: z.string().url().max(700)
+});

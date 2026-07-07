@@ -8,6 +8,7 @@ import { BarChart3, Bell, BriefcaseBusiness, CalendarDays, Check, ClipboardList,
 import { ChatDrawer } from "@/components/chat-drawer";
 import { api, clearSession, type Id } from "@/lib/api";
 import { disconnectRealtimeSocket, getRealtimeSocket } from "@/lib/realtime";
+import { enablePushNotifications, isPushSupported } from "@/lib/push-notifications";
 import { useSessionUser } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +51,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [chatThreadUnreadCounts, setChatThreadUnreadCounts] = useState<Record<Id, number>>({});
   const [initialChatThreadId, setInitialChatThreadId] = useState<Id | null>(null);
   const [browserNotificationPermission, setBrowserNotificationPermission] = useState<NotificationPermission>("default");
+  const [pushError, setPushError] = useState<string | null>(null);
 
   function chatUnreadByThread(items: NotificationItem[]) {
     return items.reduce<Record<Id, number>>((counts, item) => {
@@ -66,6 +68,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setBrowserNotificationPermission(Notification.permission);
     }
   }, []);
+
+  useEffect(() => {
+    if (!user?.id || !(user.permissions.includes("notification.view") || user.roles.includes("admin"))) return;
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission !== "granted" || !isPushSupported()) return;
+
+    enablePushNotifications().catch((error) => {
+      setPushError(error instanceof Error ? error.message : "Push notifications could not be enabled.");
+    });
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const threadId = searchParams.get("chatThreadId");
+    if (!threadId || !(user?.permissions.includes("chat.view") || user?.roles.includes("admin"))) return;
+
+    openChat(threadId);
+    router.replace(pathname);
+  }, [pathname, router, user?.id]);
 
   useEffect(() => {
     if (!user?.permissions.includes("notification.view") && !user?.roles.includes("admin")) return;
@@ -144,9 +167,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   async function enableBrowserNotifications() {
-    if (typeof window === "undefined" || !("Notification" in window)) return;
-    const permission = await Notification.requestPermission();
-    setBrowserNotificationPermission(permission);
+    setPushError(null);
+
+    try {
+      const permission = await enablePushNotifications();
+      setBrowserNotificationPermission(permission);
+    } catch (error) {
+      setPushError(error instanceof Error ? error.message : "Push notifications could not be enabled.");
+      if (typeof window !== "undefined" && "Notification" in window) {
+        setBrowserNotificationPermission(Notification.permission);
+      }
+    }
   }
 
   async function handleNotificationClick(notification: NotificationItem) {
@@ -260,7 +291,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       <div className="text-xs text-[#667085]">{unreadCount} unread</div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {browserNotificationPermission === "default" ? (
+                      {browserNotificationPermission === "default" && isPushSupported() ? (
                         <button type="button" onClick={enableBrowserNotifications} className="inline-flex h-8 items-center rounded-md bg-[#2563eb] px-2 text-xs font-semibold text-white">
                           Enable
                         </button>
@@ -271,6 +302,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       </button>
                     </div>
                   </div>
+                  {pushError ? <div className="border-b border-[#fde68a] bg-[#fffbeb] px-4 py-2 text-xs text-[#92400e]">{pushError}</div> : null}
                   <div className="max-h-[420px] overflow-auto">
                     {notifications.length === 0 ? <div className="px-4 py-8 text-center text-sm text-[#667085]">No notifications yet.</div> : null}
                     {notifications.map((notification) => (

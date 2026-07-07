@@ -648,6 +648,10 @@ export const api = {
 
   notifications: {
     listMine: <T = unknown[]>() => get<T>("/notifications"),
+    pushPublicKey: <T = unknown>() => get<T>("/notifications/push/public-key"),
+    subscribePush: <T = unknown>(body: { endpoint: string; expirationTime?: number | null; keys: { p256dh: string; auth: string } }) =>
+      post<T>("/notifications/push/subscribe", body),
+    unsubscribePush: <T = unknown>(body: { endpoint: string }) => post<T>("/notifications/push/unsubscribe", body),
     markRead: <T = unknown>(id: Id) => patch<T>(`/notifications/${id}/read`),
     markAllRead: <T = unknown>() => patch<T>("/notifications/read-all"),
     preferences: {

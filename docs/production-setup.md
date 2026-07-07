@@ -98,6 +98,10 @@ ACCESS_TOKEN_TTL="15m"
 REFRESH_TOKEN_TTL_DAYS=30
 CORS_ALLOWED_ORIGINS="https://pms.example.com"
 CREDENTIAL_ENCRYPTION_KEY="CHANGE_THIS_32_BYTE_BASE64_KEY"
+PUBLIC_APP_URL="https://pms.example.com"
+VAPID_SUBJECT="mailto:admin@example.com"
+VAPID_PUBLIC_KEY="CHANGE_THIS_VAPID_PUBLIC_KEY"
+VAPID_PRIVATE_KEY="CHANGE_THIS_VAPID_PRIVATE_KEY"
 SEED_ADMIN_EMAIL="admin@example.com"
 SEED_ADMIN_PASSWORD="CHANGE_THIS_ADMIN_PASSWORD"
 SEED_ADMIN_FIRST_NAME="System"
@@ -111,6 +115,14 @@ openssl rand -base64 32
 ```
 
 Important: keep `CREDENTIAL_ENCRYPTION_KEY` stable after production starts. Existing encrypted project credentials cannot be decrypted if this value is lost or changed.
+
+Generate browser push notification VAPID keys:
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+Use the generated public/private key pair in `backend/.env`. Keep the private key secret.
 
 ## 5. Frontend Environment
 
@@ -127,6 +139,7 @@ For a separate API subdomain:
 NEXT_PUBLIC_API_URL=https://api.example.com
 NEXT_PUBLIC_SOCKET_URL=https://api.example.com
 NEXT_PUBLIC_SOCKET_PATH=/socket.io
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=YOUR_GENERATED_VAPID_PUBLIC_KEY
 ```
 
 For one domain with Nginx routing directly to the backend, use the full public backend URL that users' browsers can reach.
@@ -137,6 +150,7 @@ If your REST API is exposed under a path such as `https://pms.example.com/api`, 
 NEXT_PUBLIC_API_URL=https://pms.example.com/api
 NEXT_PUBLIC_SOCKET_URL=https://pms.example.com
 NEXT_PUBLIC_SOCKET_PATH=/socket.io
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=YOUR_GENERATED_VAPID_PUBLIC_KEY
 ```
 
 ## 6. Prisma Migration And Seed
@@ -319,6 +333,8 @@ Browser checks:
 - Profile image loads from the backend URL
 - Realtime chat connects
 - Notifications appear without refreshing
+- Browser push notifications can be enabled from the notification panel
+- Push notification click opens the dashboard, and chat push clicks open the chat thread
 - File upload works
 
 ## 12. Deployment Updates
@@ -395,6 +411,16 @@ Realtime chat or notifications not working:
 - Confirm `NEXT_PUBLIC_SOCKET_URL` points to the public backend origin.
 - If REST uses `/api`, confirm `NEXT_PUBLIC_SOCKET_URL` is the origin only, not a URL ending with `/api`.
 - Check `pm2 logs pms-backend` for Socket.IO errors.
+
+Browser push notifications not working:
+
+- Confirm the production site uses HTTPS. Browser push does not work on plain HTTP production domains.
+- Confirm `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` are set in `backend/.env`.
+- Confirm `NEXT_PUBLIC_VAPID_PUBLIC_KEY` matches the backend public key.
+- Confirm `PUBLIC_APP_URL` is the public frontend URL.
+- Run `npm --workspace backend run prisma:deploy` so the `pushSubscriptions` table exists.
+- Rebuild frontend after changing `NEXT_PUBLIC_VAPID_PUBLIC_KEY`.
+- Check DevTools Application -> Service Workers and Push Messaging for subscription state.
 
 Backend starts locally but fails after build:
 

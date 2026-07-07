@@ -208,6 +208,7 @@ model User {
   developerLeaves         DeveloperLeave[]         @relation("DeveloperLeaves")
   notifications           UserNotification[]
   notificationPreferences NotificationPreference[]
+  pushSubscriptions       PushSubscription[]
   emailLogs               EmailLog[]
   activityLogs            ActivityLog[]            @relation("ActivityLogActor")
   chatThreadsCreated      ChatThread[]             @relation("ChatThreadCreatedBy")
@@ -1047,6 +1048,27 @@ model NotificationPreference {
   @@index([type])
   @@index([channel])
   @@map("notificationPreferences")
+}
+
+model PushSubscription {
+  id         String    @id @default(cuid()) @db.VarChar(191)
+  userId     String    @db.VarChar(191)
+  endpoint   String    @unique @db.VarChar(700)
+  p256dh     String    @db.VarChar(255)
+  auth       String    @db.VarChar(255)
+  userAgent  String?   @db.VarChar(500)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+  isActive   Boolean   @default(true)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("pushSubscriptions")
 }
 
 model EmailLog {

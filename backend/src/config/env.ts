@@ -33,6 +33,10 @@ export const env = {
   jwtAccessSecret: readRequired("JWT_ACCESS_SECRET"),
   jwtRefreshSecret: readRequired("JWT_REFRESH_SECRET"),
   credentialEncryptionKey: readRequired("CREDENTIAL_ENCRYPTION_KEY"),
+  publicAppUrl: process.env.PUBLIC_APP_URL ?? "http://localhost:3000",
+  vapidSubject: process.env.VAPID_SUBJECT ?? "mailto:admin@example.com",
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY,
   accessTokenTtl: process.env.ACCESS_TOKEN_TTL ?? "15m",
   refreshTokenTtlDays: readNumber("REFRESH_TOKEN_TTL_DAYS", 30),
   corsAllowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "http://localhost:3000")

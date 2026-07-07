@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { notificationService } from "../services/notificationService.js";
+import { pushNotificationService } from "../services/pushNotificationService.js";
 import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -17,6 +18,26 @@ function readStatus(value: unknown) {
 export const notificationController = {
   listMine: asyncHandler(async (req: Request, res: Response) => {
     const data = await notificationService.listMyNotifications(req.user!, readStatus(req.query.status));
+    res.json({ success: true, data });
+  }),
+
+  pushPublicKey: asyncHandler(async (_req: Request, res: Response) => {
+    res.json({
+      success: true,
+      data: {
+        isConfigured: pushNotificationService.isConfigured(),
+        publicKey: pushNotificationService.publicKey()
+      }
+    });
+  }),
+
+  subscribePush: asyncHandler(async (req: Request, res: Response) => {
+    const data = await pushNotificationService.subscribe(req.body, req.user!, req.get("user-agent"));
+    res.status(201).json({ success: true, data });
+  }),
+
+  unsubscribePush: asyncHandler(async (req: Request, res: Response) => {
+    const data = await pushNotificationService.unsubscribe(req.body.endpoint, req.user!);
     res.json({ success: true, data });
   }),
 

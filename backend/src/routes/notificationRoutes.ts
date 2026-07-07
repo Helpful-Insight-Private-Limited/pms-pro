@@ -5,6 +5,8 @@ import { permissionRequired } from "../middlewares/permissionRequired.js";
 import {
   createDomainNotificationSchema,
   createNotificationTemplateSchema,
+  pushSubscriptionSchema,
+  unsubscribePushSubscriptionSchema,
   updateNotificationPreferencesSchema,
   updateNotificationTemplateSchema
 } from "../validators/notificationValidators.js";
@@ -13,6 +15,21 @@ import { validateBody } from "../validators/validate.js";
 export const notificationRoutes = Router();
 
 notificationRoutes.get("/", authRequired, permissionRequired("notification.view"), notificationController.listMine);
+notificationRoutes.get("/push/public-key", authRequired, permissionRequired("notification.view"), notificationController.pushPublicKey);
+notificationRoutes.post(
+  "/push/subscribe",
+  authRequired,
+  permissionRequired("notification.view"),
+  validateBody(pushSubscriptionSchema),
+  notificationController.subscribePush
+);
+notificationRoutes.post(
+  "/push/unsubscribe",
+  authRequired,
+  permissionRequired("notification.view"),
+  validateBody(unsubscribePushSubscriptionSchema),
+  notificationController.unsubscribePush
+);
 notificationRoutes.patch("/:id/read", authRequired, permissionRequired("notification.view"), notificationController.markRead);
 notificationRoutes.patch("/read-all", authRequired, permissionRequired("notification.view"), notificationController.markAllRead);
 notificationRoutes.get("/preferences", authRequired, permissionRequired("notification.view"), notificationController.listPreferences);

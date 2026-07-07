@@ -634,6 +634,20 @@ exports.Prisma.NotificationPreferenceScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.PushSubscriptionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  endpoint: 'endpoint',
+  p256dh: 'p256dh',
+  auth: 'auth',
+  userAgent: 'userAgent',
+  lastUsedAt: 'lastUsedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt',
+  isActive: 'isActive'
+};
+
 exports.Prisma.EmailLogScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -1063,6 +1077,15 @@ exports.Prisma.NotificationPreferenceOrderByRelevanceFieldEnum = {
   userId: 'userId'
 };
 
+exports.Prisma.PushSubscriptionOrderByRelevanceFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  endpoint: 'endpoint',
+  p256dh: 'p256dh',
+  auth: 'auth',
+  userAgent: 'userAgent'
+};
+
 exports.Prisma.EmailLogOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -1307,6 +1330,7 @@ exports.Prisma.ModelName = {
   NotificationTemplate: 'NotificationTemplate',
   UserNotification: 'UserNotification',
   NotificationPreference: 'NotificationPreference',
+  PushSubscription: 'PushSubscription',
   EmailLog: 'EmailLog',
   BackgroundJobRun: 'BackgroundJobRun',
   CalendarEvent: 'CalendarEvent',
