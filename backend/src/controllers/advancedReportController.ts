@@ -59,5 +59,10 @@ export const advancedReportController = {
   budgetOverruns: asyncHandler(async (req: Request, res: Response) => {
     const data = await advancedReportService.getBudgetOverrunReport(req.user!, filters(req));
     res.json({ success: true, data });
+  }),
+
+  sendProjectEmail: asyncHandler(async (req: Request, res: Response) => {
+    const data = await advancedReportService.sendProjectReportEmail(req.user!, req.body);
+    res.json({ success: true, data });
   })
 };

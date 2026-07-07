@@ -16,6 +16,7 @@ export const notificationRoutes = Router();
 
 notificationRoutes.get("/", authRequired, permissionRequired("notification.view"), notificationController.listMine);
 notificationRoutes.get("/push/public-key", authRequired, permissionRequired("notification.view"), notificationController.pushPublicKey);
+notificationRoutes.get("/email-status", authRequired, permissionRequired("notification.view"), notificationController.emailStatus);
 notificationRoutes.post(
   "/push/subscribe",
   authRequired,

@@ -37,6 +37,16 @@ export const env = {
   vapidSubject: process.env.VAPID_SUBJECT ?? "mailto:admin@example.com",
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY,
+  email: {
+    enabled: process.env.EMAIL_ENABLED === "true",
+    host: process.env.SMTP_HOST,
+    port: readNumber("SMTP_PORT", 587),
+    secure: process.env.SMTP_SECURE === "true",
+    user: process.env.SMTP_USER,
+    password: process.env.SMTP_PASSWORD,
+    fromName: process.env.SMTP_FROM_NAME ?? "PMS Workspace",
+    fromEmail: process.env.SMTP_FROM_EMAIL
+  },
   accessTokenTtl: process.env.ACCESS_TOKEN_TTL ?? "15m",
   refreshTokenTtlDays: readNumber("REFRESH_TOKEN_TTL_DAYS", 30),
   corsAllowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "http://localhost:3000")

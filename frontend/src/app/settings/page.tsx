@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Brush, Coins, Edit3, KeyRound, Layers3, Plus, RefreshCcw, Save, Shield, Trash2, X } from "lucide-react";
+import { AlertTriangle, Bell, Brush, Coins, Edit3, KeyRound, Layers3, Mail, Plus, RefreshCcw, Save, Shield, Trash2, X } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
-import { api, type CreateRoleInput, type CurrencyInput, type SiteSettings, type SiteSettingsInput, type TechnologyStackInput, type UpdateRoleInput } from "@/lib/api";
+import { api, type CreateRoleInput, type CurrencyInput, type EmailServiceStatus, type NotificationPreferenceInput, type NotificationType, type SiteSettings, type SiteSettingsInput, type TechnologyStackInput, type UpdateRoleInput } from "@/lib/api";
 import { useSessionUser } from "@/lib/session";
 
 type Permission = { id: string; key: string; module: string; action: string };
@@ -21,7 +21,7 @@ type Role = {
 };
 type Currency = CurrencyInput & { id: string; isActive: boolean };
 type TechnologyStack = TechnologyStackInput & { id: string; isActive: boolean };
-type Tab = "branding" | "roles" | "currencies" | "technology" | "system";
+type Tab = "branding" | "email" | "roles" | "currencies" | "technology" | "system";
 
 type RoleForm = {
   id?: string;
@@ -35,6 +35,7 @@ type RoleForm = {
 const emptyRole: RoleForm = { name: "", slug: "", description: "", isActive: true, permissionIds: [] };
 const emptyCurrency: CurrencyInput & { id?: string; isActive?: boolean } = { code: "", name: "", symbol: "" };
 const emptyTechnology: TechnologyStackInput & { id?: string; isActive?: boolean } = { name: "", category: "" };
+const notificationTypes: NotificationType[] = ["SYSTEM", "PROJECT_ASSIGNED", "TASK_ASSIGNED", "TASK_UPDATED", "TASK_COMMENT", "TASK_BLOCKED", "MILESTONE_DUE", "SPRINT_UPDATED", "DAILY_REPORT", "CHAT_MESSAGE"];
 const emptySiteSettings: SiteSettingsInput = {
   appName: "PMS Workspace",
   tagline: "",
@@ -65,6 +66,9 @@ export default function SettingsPage() {
   const [technologyStacks, setTechnologyStacks] = useState<TechnologyStack[]>([]);
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
   const [siteForm, setSiteForm] = useState<SiteSettingsInput>(emptySiteSettings);
+  const [emailStatus, setEmailStatus] = useState<EmailServiceStatus | null>(null);
+  const [emailPreferences, setEmailPreferences] = useState<NotificationPreferenceInput[]>([]);
+  const [emailLogs, setEmailLogs] = useState<Array<{ id: string; toEmail: string; subject: string; status: string; createdAt: string; errorMessage?: string | null }>>([]);
   const [cleanupConfirmation, setCleanupConfirmation] = useState("");
   const [cleanupSummary, setCleanupSummary] = useState<Record<string, number> | null>(null);
   const [roleForm, setRoleForm] = useState<RoleForm>(emptyRole);
@@ -81,12 +85,15 @@ export default function SettingsPage() {
     setLoading(true);
     setError("");
     try {
-      const [siteData, roleList, permissionList, currencyList, stackList] = await Promise.all([
+      const [siteData, roleList, permissionList, currencyList, stackList, mailStatus, preferences, logs] = await Promise.all([
         api.system.siteSettings<SiteSettings>(),
         api.roles.list<Role[]>(),
         api.permissions.list<Permission[]>(),
         api.masters.currencies.list<Currency[]>(),
-        api.masters.technologyStacks.list<TechnologyStack[]>()
+        api.masters.technologyStacks.list<TechnologyStack[]>(),
+        api.notifications.emailStatus<EmailServiceStatus>().catch(() => null),
+        api.notifications.preferences.list<NotificationPreferenceInput[]>().catch(() => []),
+        api.notifications.emailLogs<Array<{ id: string; toEmail: string; subject: string; status: string; createdAt: string; errorMessage?: string | null }>>().catch(() => [])
       ]);
       setSiteSettings(siteData);
       setSiteForm({
@@ -106,6 +113,12 @@ export default function SettingsPage() {
       setPermissions(permissionList);
       setCurrencies(currencyList);
       setTechnologyStacks(stackList);
+      setEmailStatus(mailStatus);
+      setEmailPreferences(notificationTypes.map((type) => {
+        const preference = preferences.find((item) => item.type === type && item.channel === "EMAIL");
+        return { type, channel: "EMAIL", isEnabled: preference?.isEnabled ?? true };
+      }));
+      setEmailLogs(logs);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Unable to load settings");
     } finally {
@@ -341,8 +354,23 @@ export default function SettingsPage() {
     }
   }
 
+  async function toggleEmailPreference(type: NotificationType, isEnabled: boolean) {
+    const next = emailPreferences.map((preference) => preference.type === type ? { ...preference, isEnabled } : preference);
+    setEmailPreferences(next);
+    setError("");
+    setNotice("");
+    try {
+      await api.notifications.preferences.update(next);
+      setNotice("Email preferences updated.");
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Unable to update email preferences");
+      await loadData();
+    }
+  }
+
   const tabs = [
     { key: "branding" as const, label: "Branding", icon: Brush },
+    { key: "email" as const, label: "Email", icon: Mail },
     { key: "roles" as const, label: "Roles", icon: Shield },
     { key: "currencies" as const, label: "Currencies", icon: Coins },
     { key: "technology" as const, label: "Technology", icon: Layers3 },
@@ -396,6 +424,14 @@ export default function SettingsPage() {
           canManage={canManageSystem}
           onChange={setSiteForm}
           onSubmit={saveSiteSettings}
+        />
+      ) : null}
+      {activeTab === "email" ? (
+        <EmailPanel
+          status={emailStatus}
+          preferences={emailPreferences}
+          logs={emailLogs}
+          onToggle={toggleEmailPreference}
         />
       ) : null}
       {activeTab === "roles" ? <RolesTable roles={roles} loading={loading} onEdit={openEditRole} onDelete={deleteRole} /> : null}
@@ -643,6 +679,83 @@ function SystemCleanupPanel({
           </div>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function EmailPanel({
+  status,
+  preferences,
+  logs,
+  onToggle
+}: {
+  status: EmailServiceStatus | null;
+  preferences: NotificationPreferenceInput[];
+  logs: Array<{ id: string; toEmail: string; subject: string; status: string; createdAt: string; errorMessage?: string | null }>;
+  onToggle: (type: NotificationType, isEnabled: boolean) => void;
+}) {
+  return (
+    <div className="grid gap-5 xl:grid-cols-[380px_1fr]">
+      <div className="space-y-5">
+        <div className="rounded-md border border-[#d7dde8] bg-white p-5">
+          <div className="mb-4 flex items-center gap-2 text-lg font-semibold text-[#111827]">
+            <Mail className="h-5 w-5 text-[#2563eb]" />
+            Email Service
+          </div>
+          <StatusBadge value={status?.configured ? "CONFIGURED" : "DISABLED"} />
+          <div className="mt-4 space-y-2 text-sm">
+            <PreviewRow label="Enabled" value={status?.enabled ? "Yes" : "No"} />
+            <PreviewRow label="SMTP host" value={status?.host || "-"} />
+            <PreviewRow label="Port" value={String(status?.port ?? "-")} />
+            <PreviewRow label="From" value={status?.fromEmail || "-"} />
+          </div>
+          {!status?.configured ? (
+            <div className="mt-4 rounded-md border border-[#f9d89b] bg-[#fff8e6] p-3 text-sm text-[#92400e]">
+              Add SMTP env values and set EMAIL_ENABLED=true to send production emails.
+            </div>
+          ) : null}
+        </div>
+        <div className="rounded-md border border-[#d7dde8] bg-white p-5">
+          <div className="mb-4 flex items-center gap-2 text-lg font-semibold text-[#111827]">
+            <Bell className="h-5 w-5 text-[#2563eb]" />
+            My Email Preferences
+          </div>
+          <div className="space-y-2">
+            {preferences.map((preference) => (
+              <label key={preference.type} className="flex items-center justify-between rounded-md border border-[#edf1f7] px-3 py-2 text-sm">
+                <span className="font-medium text-[#475467]">{preference.type.replaceAll("_", " ")}</span>
+                <input type="checkbox" checked={preference.isEnabled} onChange={(event) => onToggle(preference.type, event.target.checked)} />
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+      <DataShell title="Recent Email Logs" subtitle="Delivery audit" icon={Mail}>
+        <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+          <thead className="bg-[#f8fafc] text-[#667085]">
+            <tr>
+              <th className="border-b border-[#d7dde8] px-4 py-3 font-semibold">Recipient</th>
+              <th className="border-b border-[#d7dde8] px-4 py-3 font-semibold">Subject</th>
+              <th className="border-b border-[#d7dde8] px-4 py-3 font-semibold">Status</th>
+              <th className="border-b border-[#d7dde8] px-4 py-3 font-semibold">Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {logs.slice(0, 20).map((log) => (
+              <tr key={log.id} className="hover:bg-[#fbfcff]">
+                <td className="border-b border-[#edf1f7] px-4 py-4 font-medium text-[#111827]">{log.toEmail}</td>
+                <td className="border-b border-[#edf1f7] px-4 py-4 text-[#667085]">
+                  <div>{log.subject}</div>
+                  {log.errorMessage ? <div className="mt-1 text-xs text-[#b42318]">{log.errorMessage}</div> : null}
+                </td>
+                <td className="border-b border-[#edf1f7] px-4 py-4"><StatusBadge value={log.status} /></td>
+                <td className="border-b border-[#edf1f7] px-4 py-4 text-[#667085]">{new Date(log.createdAt).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!logs.length ? <div className="p-8 text-sm text-[#667085]">No email logs found.</div> : null}
+      </DataShell>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { notificationService } from "../services/notificationService.js";
+import { emailService } from "../services/emailService.js";
 import { pushNotificationService } from "../services/pushNotificationService.js";
 import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -29,6 +30,10 @@ export const notificationController = {
         publicKey: pushNotificationService.publicKey()
       }
     });
+  }),
+
+  emailStatus: asyncHandler(async (_req: Request, res: Response) => {
+    res.json({ success: true, data: emailService.status() });
   }),
 
   subscribePush: asyncHandler(async (req: Request, res: Response) => {

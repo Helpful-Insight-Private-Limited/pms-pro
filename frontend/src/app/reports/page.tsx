@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, FileDown, FileSpreadsheet, RefreshCcw } from "lucide-react";
+import { BarChart3, FileDown, FileSpreadsheet, Mail, RefreshCcw, Send, X } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
@@ -12,6 +12,7 @@ import { useSessionUser } from "@/lib/session";
 type Person = { firstName?: string | null; lastName?: string | null; email?: string | null };
 type ReportRow = Record<string, unknown>;
 type UserOption = { id: string; firstName: string; lastName?: string | null; email: string };
+type ProjectOption = { id: string; title: string; code: string; client?: { contactEmail?: string | null; name?: string | null } | null };
 type ReportSummary = {
   totals: Record<string, number>;
   projects?: ReportRow[];
@@ -135,9 +136,13 @@ export default function ReportsPage() {
   const [active, setActive] = useState<ReportTab>(availableTabs[0] ?? reportTabs[0]);
   const [filters, setFilters] = useState<ReportFilters>({});
   const [users, setUsers] = useState<UserOption[]>([]);
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [data, setData] = useState<ReportSummary | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailForm, setEmailForm] = useState({ projectId: "", toEmail: "", subject: "", message: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   async function loadReport(loader = active.load, query = filters) {
     setLoading(true);
@@ -154,6 +159,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     api.users.list<UserOption[]>().then(setUsers).catch(() => setUsers([]));
+    api.projects.list<ProjectOption[]>().then(setProjects).catch(() => setProjects([]));
   }, []);
 
   useEffect(() => {
@@ -167,6 +173,36 @@ export default function ReportsPage() {
 
   const rows = useMemo(() => data?.projects ?? data?.developers ?? data?.members ?? data?.tasks ?? [], [data]);
   const totals = data?.totals ?? {};
+  const canEmailProjectReport = Boolean(user?.roles?.includes("admin") || user?.permissions?.includes("report.email"));
+
+  function openEmailReport() {
+    const project = projects.find((item) => item.id === filters.projectId) ?? projects[0];
+    setEmailForm({
+      projectId: project?.id ?? "",
+      toEmail: project?.client?.contactEmail ?? "",
+      subject: project ? `${project.code} - ${project.title} Project Status Report` : "",
+      message: ""
+    });
+    setEmailOpen(true);
+  }
+
+  async function sendProjectEmail(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    try {
+      await api.reports.sendProjectEmail({
+        projectId: emailForm.projectId,
+        toEmail: emailForm.toEmail || undefined,
+        subject: emailForm.subject || undefined,
+        message: emailForm.message || undefined
+      });
+      setEmailOpen(false);
+      setNotice("Project report email sent successfully.");
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Unable to send project report email");
+    }
+  }
 
   return (
     <AppShell>
@@ -188,11 +224,19 @@ export default function ReportsPage() {
               <FileDown className="h-4 w-4" />
               PDF
             </button>
+            {canEmailProjectReport ? (
+              <button onClick={openEmailReport} className="inline-flex h-10 items-center gap-2 rounded-md bg-[#111827] px-3 text-sm font-semibold text-white">
+                <Mail className="h-4 w-4" />
+                Send to Client
+              </button>
+            ) : null}
           </>
         }
       />
 
-      <div className="mb-5 grid gap-3 rounded-md border border-[#d7dde8] bg-white p-4 md:grid-cols-[1fr_1fr_1.4fr_auto]">
+      {notice ? <div className="mb-4 rounded-md border border-[#a7dfc0] bg-[#edf9f1] p-4 text-sm text-[#137333]">{notice}</div> : null}
+
+      <div className="mb-5 grid gap-3 rounded-md border border-[#d7dde8] bg-white p-4 md:grid-cols-[1fr_1fr_1.4fr_1.4fr_auto]">
         <label className="block">
           <span className="mb-2 block text-xs font-semibold uppercase text-[#667085]">From</span>
           <input type="date" value={filters.fromDate ?? ""} onChange={(event) => setFilters((current) => ({ ...current, fromDate: event.target.value || undefined }))} className="h-10 w-full rounded-md border border-[#d7dde8] px-3 text-sm" />
@@ -206,6 +250,13 @@ export default function ReportsPage() {
           <select value={filters.developerId ?? ""} onChange={(event) => setFilters((current) => ({ ...current, developerId: event.target.value || undefined }))} className="h-10 w-full rounded-md border border-[#d7dde8] px-3 text-sm">
             <option value="">All developers</option>
             {users.map((option) => <option key={option.id} value={option.id}>{personName(option)} - {option.email}</option>)}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-2 block text-xs font-semibold uppercase text-[#667085]">Project</span>
+          <select value={filters.projectId ?? ""} onChange={(event) => setFilters((current) => ({ ...current, projectId: event.target.value || undefined }))} className="h-10 w-full rounded-md border border-[#d7dde8] px-3 text-sm">
+            <option value="">All projects</option>
+            {projects.map((option) => <option key={option.id} value={option.id}>{option.code} - {option.title}</option>)}
           </select>
         </label>
         <div className="flex items-end">
@@ -250,6 +301,63 @@ export default function ReportsPage() {
               {active.key === "estimated-vs-actual" ? <EstimateReport rows={data.tasks ?? []} /> : null}
             </div>
             {!rows.length ? <div className="p-8 text-sm text-[#667085]">No rows found for this report.</div> : null}
+          </section>
+        </div>
+      ) : null}
+
+      {emailOpen ? (
+        <div className="fixed inset-0 z-50 bg-[#111827]/60 px-4 py-6 backdrop-blur-sm">
+          <section className="mx-auto max-w-2xl overflow-hidden rounded-md border border-[#d7dde8] bg-white shadow-2xl">
+            <div className="flex h-16 items-center justify-between border-b border-[#d7dde8] px-5">
+              <div>
+                <div className="text-lg font-semibold text-[#111827]">Send Project Report</div>
+                <div className="text-sm text-[#667085]">The email body is generated automatically from live project progress.</div>
+              </div>
+              <button type="button" onClick={() => setEmailOpen(false)} className="grid h-9 w-9 place-items-center rounded-md border border-[#d7dde8]">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <form onSubmit={sendProjectEmail} className="space-y-4 p-5">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium">Project</span>
+                <select
+                  required
+                  value={emailForm.projectId}
+                  onChange={(event) => {
+                    const project = projects.find((item) => item.id === event.target.value);
+                    setEmailForm((current) => ({
+                      ...current,
+                      projectId: event.target.value,
+                      toEmail: project?.client?.contactEmail ?? current.toEmail,
+                      subject: project ? `${project.code} - ${project.title} Project Status Report` : current.subject
+                    }));
+                  }}
+                  className="h-10 w-full rounded-md border border-[#d7dde8] px-3 text-sm"
+                >
+                  <option value="">Select project</option>
+                  {projects.map((project) => <option key={project.id} value={project.id}>{project.code} - {project.title}</option>)}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium">Client email</span>
+                <input required type="email" value={emailForm.toEmail} onChange={(event) => setEmailForm({ ...emailForm, toEmail: event.target.value })} className="h-10 w-full rounded-md border border-[#d7dde8] px-3 text-sm" />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium">Subject</span>
+                <input value={emailForm.subject} onChange={(event) => setEmailForm({ ...emailForm, subject: event.target.value })} className="h-10 w-full rounded-md border border-[#d7dde8] px-3 text-sm" />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium">Intro message</span>
+                <textarea value={emailForm.message} onChange={(event) => setEmailForm({ ...emailForm, message: event.target.value })} className="min-h-28 w-full rounded-md border border-[#d7dde8] px-3 py-2 text-sm" placeholder="Optional note to the client before the generated report." />
+              </label>
+              <div className="flex justify-end gap-2 border-t border-[#edf1f7] pt-4">
+                <button type="button" onClick={() => setEmailOpen(false)} className="h-10 rounded-md border border-[#d7dde8] bg-white px-4 text-sm font-semibold">Cancel</button>
+                <button type="submit" className="inline-flex h-10 items-center gap-2 rounded-md bg-[#111827] px-4 text-sm font-semibold text-white">
+                  <Send className="h-4 w-4" />
+                  Send Email
+                </button>
+              </div>
+            </form>
           </section>
         </div>
       ) : null}

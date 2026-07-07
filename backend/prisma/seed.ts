@@ -80,6 +80,7 @@ const permissions = [
   "job.view",
   "dashboard.view",
   "report.view",
+  "report.email",
   "activityLog.view",
   "dailyReport.generate",
   "dailyReport.view"
@@ -188,6 +189,7 @@ const rolePermissionMap: Record<string, string[]> = {
     "job.view",
     "dashboard.view",
     "report.view",
+    "report.email",
     "activityLog.view",
     "dailyReport.generate",
     "dailyReport.view"

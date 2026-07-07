@@ -1,6 +1,8 @@
 import { prisma } from "../prisma/client.js";
 import type { Prisma } from "../generated/prisma/index.js";
 import type { AuthUser } from "../types/auth.js";
+import { ApiError } from "../utils/apiError.js";
+import { emailService } from "./emailService.js";
 
 type ReportFilters = {
   projectId?: string;
@@ -137,6 +139,25 @@ async function currentRate(developerId: string) {
     where: { developerId, deletedAt: null, isActive: true, isCurrent: true },
     orderBy: { effectiveFrom: "desc" }
   });
+}
+
+function personName(person?: { firstName?: string | null; lastName?: string | null; email?: string | null } | null) {
+  if (!person) return "-";
+  return `${person.firstName ?? ""} ${person.lastName ?? ""}`.trim() || person.email || "-";
+}
+
+function escapeHtml(value: unknown) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatDate(value?: Date | string | null) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("en", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
 
 export const advancedReportService = {
@@ -338,5 +359,124 @@ export const advancedReportService = {
       },
       projects: costing.projects.filter((project) => project.isOverBudget)
     };
+  },
+
+  async sendProjectReportEmail(user: AuthUser, input: { projectId: string; toEmail?: string; subject?: string; message?: string }) {
+    if (!emailService.isConfigured()) {
+      throw new ApiError(400, "EMAIL_NOT_CONFIGURED", "Email service is disabled or SMTP is not configured");
+    }
+
+    const project = await prisma.project.findFirst({
+      where: { id: input.projectId, ...activeProjectWhere(user) },
+      include: {
+        client: true,
+        projectManager: { select: { id: true, firstName: true, lastName: true, email: true } },
+        teamLeader: { select: { id: true, firstName: true, lastName: true, email: true } },
+        members: {
+          where: { deletedAt: null, isActive: true, releasedDate: null },
+          include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } }
+        },
+        milestones: {
+          where: { deletedAt: null },
+          orderBy: { dueDate: "asc" },
+          include: { sprints: { where: { deletedAt: null }, orderBy: { startDate: "asc" } } }
+        },
+        tasks: {
+          where: { deletedAt: null },
+          orderBy: [{ status: "asc" }, { dueDate: "asc" }],
+          include: { assignedDeveloper: { select: { firstName: true, lastName: true, email: true } } }
+        }
+      }
+    });
+
+    if (!project) throw new ApiError(404, "PROJECT_NOT_FOUND", "Project not found");
+    if (!user.roles.includes("admin") && project.projectManagerId !== user.id) {
+      throw new ApiError(403, "PROJECT_REPORT_EMAIL_FORBIDDEN", "Only admins and the project manager can send client report emails");
+    }
+
+    const toEmail = input.toEmail || project.client.contactEmail;
+    if (!toEmail) throw new ApiError(400, "CLIENT_EMAIL_REQUIRED", "Client contact email is required");
+
+    const timeLogs = await prisma.taskTimeLog.findMany({ where: { projectId: project.id } });
+    const completedTasks = project.tasks.filter((task) => task.status === "COMPLETED");
+    const pendingTasks = project.tasks.filter((task) => !["COMPLETED", "HOLD"].includes(task.status));
+    const blockedTasks = project.tasks.filter((task) => task.status === "BLOCKED");
+    const estimatedHours = project.tasks.reduce((sum, task) => sum + Number(task.estimatedHours), 0);
+    const actualHours = project.tasks.reduce((sum, task) => sum + Number(task.actualHours), 0);
+    const loggedHours = timeLogs.reduce((sum, log) => sum + Number(log.hoursWorked), 0);
+    const remainingHours = Math.max(0, estimatedHours - actualHours);
+    const subject = input.subject || `${project.code} - ${project.title} Project Status Report`;
+
+    const taskRows = pendingTasks.slice(0, 20).map((task) => `
+      <tr>
+        <td>${escapeHtml(task.title)}</td>
+        <td>${escapeHtml(task.status.replaceAll("_", " "))}</td>
+        <td>${escapeHtml(task.priority)}</td>
+        <td>${escapeHtml(personName(task.assignedDeveloper))}</td>
+        <td>${escapeHtml(formatDate(task.dueDate))}</td>
+        <td>${Number(task.progressPercentage).toFixed(0)}%</td>
+      </tr>
+    `).join("");
+
+    const milestoneRows = project.milestones.map((milestone) => `
+      <tr>
+        <td>${escapeHtml(milestone.title)}</td>
+        <td>${escapeHtml(milestone.status)}</td>
+        <td>${escapeHtml(formatDate(milestone.startDate))}</td>
+        <td>${escapeHtml(formatDate(milestone.dueDate))}</td>
+        <td>${Number(milestone.progressPercentage).toFixed(0)}%</td>
+      </tr>
+    `).join("");
+
+    const body = `
+      <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.5">
+        <h2 style="margin:0 0 4px">${escapeHtml(project.title)} Status Report</h2>
+        <p style="margin:0 0 18px;color:#667085">${escapeHtml(project.code)} | ${escapeHtml(project.client.name)} | ${escapeHtml(formatDate(new Date()))}</p>
+        ${input.message ? `<p style="padding:12px;background:#f8fafc;border:1px solid #d7dde8;border-radius:6px">${escapeHtml(input.message)}</p>` : ""}
+        <table style="width:100%;border-collapse:collapse;margin:18px 0">
+          <tr>
+            <td style="padding:10px;border:1px solid #d7dde8"><strong>Progress</strong><br>${Number(project.progressPercentage).toFixed(0)}%</td>
+            <td style="padding:10px;border:1px solid #d7dde8"><strong>Status</strong><br>${escapeHtml(project.status)}</td>
+            <td style="padding:10px;border:1px solid #d7dde8"><strong>Completed Tasks</strong><br>${completedTasks.length}/${project.tasks.length}</td>
+            <td style="padding:10px;border:1px solid #d7dde8"><strong>Remaining Hours</strong><br>${remainingHours.toFixed(2)}</td>
+          </tr>
+        </table>
+        <p><strong>Project Manager:</strong> ${escapeHtml(personName(project.projectManager))}<br>
+        <strong>Team Lead:</strong> ${escapeHtml(personName(project.teamLeader))}<br>
+        <strong>Timeline:</strong> ${escapeHtml(formatDate(project.startDate))} to ${escapeHtml(formatDate(project.endDate))}<br>
+        <strong>Logged Hours:</strong> ${loggedHours.toFixed(2)} | <strong>Estimated Hours:</strong> ${estimatedHours.toFixed(2)} | <strong>Actual Hours:</strong> ${actualHours.toFixed(2)}</p>
+        <h3>Milestones</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr><th align="left">Milestone</th><th align="left">Status</th><th align="left">Start</th><th align="left">Due</th><th align="left">Progress</th></tr></thead>
+          <tbody>${milestoneRows || `<tr><td colspan="5">No milestones added.</td></tr>`}</tbody>
+        </table>
+        <h3>Pending / Active Items</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr><th align="left">Task</th><th align="left">Status</th><th align="left">Priority</th><th align="left">Assignee</th><th align="left">Due</th><th align="left">Progress</th></tr></thead>
+          <tbody>${taskRows || `<tr><td colspan="6">No pending tasks.</td></tr>`}</tbody>
+        </table>
+        <p style="margin-top:18px;color:#667085"><strong>Blocked items:</strong> ${blockedTasks.length}. <strong>Completed tasks:</strong> ${completedTasks.length}. <strong>Pending tasks:</strong> ${pendingTasks.length}.</p>
+      </div>
+    `;
+
+    const emailLog = await emailService.queueAndSend({
+      toEmail,
+      subject,
+      body
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        actorId: user.id,
+        action: "report.projectEmailSent",
+        module: "report",
+        entityType: "Project",
+        entityId: project.id,
+        projectId: project.id,
+        metadata: { toEmail, subject, emailLogId: emailLog.id, status: emailLog.status }
+      }
+    });
+
+    return emailLog;
   }
 };

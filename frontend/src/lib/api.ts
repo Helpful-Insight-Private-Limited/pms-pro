@@ -279,6 +279,16 @@ export type NotificationPreferenceInput = {
   isEnabled: boolean;
 };
 
+export type EmailServiceStatus = {
+  enabled: boolean;
+  configured: boolean;
+  host: string | null;
+  port: number;
+  secure: boolean;
+  fromName: string;
+  fromEmail: string | null;
+};
+
 export type DomainNotificationInput = {
   templateKey?: string;
   type?: NotificationType;
@@ -669,12 +679,14 @@ export const api = {
     team: <T = unknown>(query?: ReportFilters) => get<T>("/reports/team", query),
     costing: <T = unknown>(query?: ReportFilters) => get<T>("/reports/costing", query),
     estimatedVsActual: <T = unknown>(query?: ReportFilters) => get<T>("/reports/estimated-vs-actual", query),
-    budgetOverruns: <T = unknown>(query?: ReportFilters) => get<T>("/reports/budget-overruns", query)
+    budgetOverruns: <T = unknown>(query?: ReportFilters) => get<T>("/reports/budget-overruns", query),
+    sendProjectEmail: <T = unknown>(body: { projectId: Id; toEmail?: string; subject?: string; message?: string }) => post<T>("/reports/projects/email", body)
   },
 
   notifications: {
     listMine: <T = unknown[]>() => get<T>("/notifications"),
     pushPublicKey: <T = unknown>() => get<T>("/notifications/push/public-key"),
+    emailStatus: <T = EmailServiceStatus>() => get<T>("/notifications/email-status"),
     subscribePush: <T = unknown>(body: { endpoint: string; expirationTime?: number | null; keys: { p256dh: string; auth: string } }) =>
       post<T>("/notifications/push/subscribe", body),
     unsubscribePush: <T = unknown>(body: { endpoint: string }) => post<T>("/notifications/push/unsubscribe", body),
