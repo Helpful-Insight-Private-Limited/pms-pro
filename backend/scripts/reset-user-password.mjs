@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { prisma } from "../dist/src/prisma/client.js";
 import { randomBytes, scrypt as scryptCallback } from "node:crypto";
 
@@ -29,16 +30,53 @@ async function hashPassword(password) {
 }
 
 const email = process.env.USER_EMAIL;
-const password = process.env.NEW_PASSWORD;
+const resetAllUsers = process.env.RESET_ALL_USERS === "true";
+const includeDeletedUsers = process.env.INCLUDE_DELETED_USERS === "true";
+const password = process.env.NEW_PASSWORD ?? process.env.SEED_ADMIN_PASSWORD;
 
-if (!email || !password) {
-  console.error("Usage: USER_EMAIL=user@example.com NEW_PASSWORD='StrongPassword123' npm --workspace backend run user:reset-password");
+if ((!email && !resetAllUsers) || !password) {
+  console.error("Usage:");
+  console.error("  USER_EMAIL=user@example.com NEW_PASSWORD='StrongPassword123' npm --workspace backend run user:reset-password");
+  console.error("  RESET_ALL_USERS=true npm --workspace backend run user:reset-password");
+  console.error("When NEW_PASSWORD is omitted, SEED_ADMIN_PASSWORD from backend/.env is used.");
   process.exit(1);
 }
 
 if (password.length < 10) {
   console.error("NEW_PASSWORD must be at least 10 characters.");
   process.exit(1);
+}
+
+if (resetAllUsers) {
+  const users = await prisma.user.findMany({
+    where: includeDeletedUsers ? undefined : { deletedAt: null },
+    select: { id: true, email: true }
+  });
+
+  if (users.length === 0) {
+    console.error("No users found to reset.");
+    process.exit(1);
+  }
+
+  for (const user of users) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: await hashPassword(password),
+        isActive: true,
+        deletedAt: null
+      }
+    });
+
+    await prisma.refreshToken.updateMany({
+      where: { userId: user.id, revokedAt: null },
+      data: { revokedAt: new Date() }
+    });
+  }
+
+  console.log(`Password reset and active sessions revoked for ${users.length} users.`);
+  await prisma.$disconnect();
+  process.exit(0);
 }
 
 const user = await prisma.user.findUnique({

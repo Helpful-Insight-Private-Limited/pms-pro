@@ -76,6 +76,12 @@ npm --workspace backend run build
 USER_EMAIL=admin@example.com NEW_PASSWORD='ChangeMeStrong123' npm --workspace backend run user:reset-password
 ```
 
+To reset every non-deleted user to the same password as `SEED_ADMIN_PASSWORD` in `backend/.env`:
+
+```bash
+RESET_ALL_USERS=true npm --workspace backend run user:reset-password
+```
+
 ## 3. Create The Database
 
 Open MySQL:
