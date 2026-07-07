@@ -16,6 +16,7 @@
     "start:frontend": "npm --workspace frontend run start",
     "prisma:generate": "npm --workspace backend run prisma:generate",
     "prisma:migrate": "npm --workspace backend run prisma:migrate",
+    "prisma:deploy": "npm --workspace backend run prisma:deploy",
     "seed": "npm --workspace backend run seed"
   }
 }

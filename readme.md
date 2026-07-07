@@ -879,3 +879,11 @@ Enterprise SaaS application.
 Do not simplify.
 
 Production-ready.
+
+====================================================
+PRODUCTION SETUP
+====================================================
+
+Server deployment steps are documented in:
+
+- docs/production-setup.md
