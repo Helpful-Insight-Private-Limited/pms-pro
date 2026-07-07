@@ -37,6 +37,17 @@ async function visibleUserIdsFor(user: AuthUser) {
   const visibleUserIds = new Set<string>([user.id]);
 
   if (user.roles.includes("projectManager")) {
+    const ownedUsers = await prisma.user.findMany({
+      where: {
+        createdBy: user.id,
+        deletedAt: null,
+        isActive: true
+      },
+      select: { id: true }
+    });
+
+    for (const ownedUser of ownedUsers) visibleUserIds.add(ownedUser.id);
+
     const projects = await prisma.project.findMany({
       where: {
         deletedAt: null,
@@ -259,7 +270,9 @@ export const userService = {
             phone: input.phone,
             status: "ACTIVE",
             isActive: true,
-            deletedAt: null
+            deletedAt: null,
+            createdBy: existingUser.createdBy ?? actor?.id,
+            updatedBy: actor?.id
           }
         })
         : await tx.user.create({
@@ -268,7 +281,8 @@ export const userService = {
             lastName: input.lastName,
             email: input.email,
             passwordHash: await hashPassword(input.password),
-            phone: input.phone
+            phone: input.phone,
+            createdBy: actor?.id
           }
         });
 
@@ -384,14 +398,11 @@ export const userService = {
         });
       }
 
+      await autoAttachCreatedUserToManagedProjects(tx, userId, roleIds, actor);
+
       return tx.user.findUniqueOrThrow({
         where: { id: userId },
-        include: {
-          userRoles: {
-            where: { isActive: true, revokedAt: null },
-            include: { role: true }
-          }
-        }
+        include: userListInclude
       });
     });
   }
